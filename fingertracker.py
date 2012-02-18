@@ -92,7 +92,7 @@ class FingerTracker(object):
             else:
                 return (0, 0, 0)
         complist = list(getconnectedcomp(x, y) for x in range(rowcutoff, rows-rowcutoff, 20) for y in range(colcutoff,columns-colcutoff,20))
-        complist = sorted(filter(lambda comp: comp[0] > 100, complist), key = lambda comp: comp[0])
+        complist = sorted(filter(lambda comp: comp[0] > 200, complist), key = lambda comp: comp[0])
 
         ret = []
         for comp in complist:
