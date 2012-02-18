@@ -6,6 +6,7 @@ class BlobTracker:
         cv.NamedWindow("Hue",1)
         cv.NamedWindow("Saturation",1)
         cv.NamedWindow("Filtered",1)
+        cv.NamedWindow("Eroded",1)
         cv.NamedWindow("Image",1)
         self.capture = cv.CaptureFromCAM(0)
 
@@ -33,6 +34,11 @@ class BlobTracker:
         while cv.WaitKey(10) != 27:
             img = cv.QueryFrame(self.capture)
             cv.Flip(img,img,1)
+            r = cv.CreateImage(cv.GetSize(img), 8, 1)
+            g = cv.CreateImage(cv.GetSize(img), 8, 1)
+            b = cv.CreateImage(cv.GetSize(img), 8, 1)
+            cv.Split(img, b, g, r, None)
+
             cv.CvtColor(img, img, cv.CV_BGR2HSV)
             h = cv.CreateImage(cv.GetSize(img), 8, 1)
             s = cv.CreateImage(cv.GetSize(img), 8, 1)
@@ -48,20 +54,35 @@ class BlobTracker:
             #cv.CvtColor(img, img, cv.CV_HSV2BGR)
             #cv.ShowImage(window_hue, threshold_h)
 
-            #EDITS BY RICHIE
-            mem = cv.CreateMemStorage()
-            contours = cv.FindContours(threshold_total,mem)
-            moments = cv.Moments(contours, 0)
-            area = cv.GetCentralMoment(moments, 0, 0)
-            if area > 10:
-                x = cv.GetSpatialMoment(moments, 1, 0)/area
-                y = cv.GetSpatialMoment(moments, 0, 1)/area
-                print('x:{0} y{1} area:{2}'.format(x,y,area))
-            #END OF EDITS BY RICHIE
-
             cv.ShowImage("Hue", threshold_h)
             cv.ShowImage("Saturation", threshold_s)
             cv.ShowImage("Filtered", threshold_total)
+
+            do_blur = True
+            if do_blur:
+                cv.Smooth(threshold_total, threshold_total, cv.CV_BLUR, 10)
+                cv.Erode(threshold_total, threshold_total, None, 3)
+                #cv.Dilate(threshold_total, threshold_total, None, 4)
+                #cv.Smooth(threshold_total, threshold_total, cv.CV_BLUR, 5)
+
+                blurred = cv.CreateImage(cv.GetSize(img), 8, 1)
+                cv.Smooth(threshold_total, blurred, cv.CV_BLUR, 2)
+                cv.AddWeighted(threshold_total, 1.8, blurred, -0.8, 0, threshold_total)
+                cv.Dilate(threshold_total, threshold_total, None, 1)
+                #cv.Erode(threshold_total, threshold_total, None, 6)
+
+            do_edges = False
+            if do_edges:
+                mem = cv.CreateMemStorage()
+                contours = cv.FindContours(threshold_total,mem,cv.CV_RETR_LIST)
+                moments = cv.Moments(contours, 0)
+                area = cv.GetCentralMoment(moments, 0, 0)
+                if area > 10:
+                    x = cv.GetSpatialMoment(moments, 1, 0)/area
+                    y = cv.GetSpatialMoment(moments, 0, 1)/area
+                    print('x:{0} y{1} area:{2}'.format(x,y,area))
+
+            cv.ShowImage("Eroded", threshold_total)
             cv.ShowImage("Image", img)
             #cv.ShowImage(window_rgb, img)
         self.destroy()
@@ -70,6 +91,7 @@ class BlobTracker:
         cv.DestroyWindow("Hue")
         cv.DestroyWindow("Saturation")
         cv.DestroyWindow("Filtered")
+        cv.DestroyWindow("Eroded")
         cv.DestroyWindow("Image")
         del self.capture
 
