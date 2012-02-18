@@ -18,7 +18,7 @@ class FingerTracker(object):
         #cv.NamedWindow("Output",1)
         self.capture = cv.CaptureFromCAM(0)
 
-    def filter1(self, img):
+    def filter1(self, img, img_display):
         """Run filter method 1 on an image, returning a black-and-white version of it
 
         :param img: Input image (RGB)
@@ -40,17 +40,16 @@ class FingerTracker(object):
 
         return threshold_total
 
-    def filter2(self, img, g_low=75, g_hi=150, h_low=55, h_hi=95, s_low=50, s_hi=255):
+    def filter2(self, img, img_display, g_low=75, g_hi=150, h_low=55, h_hi=95, s_low=50, s_hi=255):
         """Run filter method 2 on an image, returing a black-and-white version of it
 
         :param img: Input image (RGB)
         :return: Output image (Grayscale, white=finger, black=background)
         """
         r = cv.CreateImage(cv.GetSize(img), 8, 1)
-        g = cv.CreateImage(cv.GetSize(img), 8, 1)
+        g = img_display
         b = cv.CreateImage(cv.GetSize(img), 8, 1)
         cv.Split(img, r, g, b, None)
-        cv.ShowImage("Camera", g)
 
         cv.Smooth(g, g, cv.CV_BLUR, 4)
         threshold_g = cv.CreateImage(cv.GetSize(img), 8, 1)
@@ -77,7 +76,7 @@ class FingerTracker(object):
         cv.Threshold(threshold_total, threshold_total, 100, 255, cv.CV_THRESH_BINARY)
         return threshold_total
 
-    def connectedcomps(self, img, cutoff=0.1):
+    def connectedcomps(self, img, display_img, cutoff=0.1):
         """Finds connected components in image
 
         :param img: A CV image to search for connected components
@@ -104,7 +103,7 @@ class FingerTracker(object):
                 continue
 
             x1, x2, y1, y2 = x, x + width, y, y + height
-            cv.Rectangle(img, (x1, y1), (x2, y2), (255, 0, 0))
+            cv.Rectangle(display_img, (x1, y1), (x2, y2), (0, 0, 0))
             ret += [  [(x1+x2)/2, (y1+y2)/2 ]  ]
         return ret
 
@@ -135,9 +134,12 @@ class FingerTracker(object):
             cv.Flip(img,img,1)
             #cv.ShowImage("Image", img)
 
-            img = self.filter2(img)
-            c = self.connectedcomps(img)
+            img_display = cv.CreateImage(cv.GetSize(img), 8, 1)
+            img = self.filter2(img, img_display)
+            c = self.connectedcomps(img, img_display)
             self.add_two_positions(ti, c)
+
+            cv.ShowImage("Camera", img_display)
             #cv.ShowImage("Output", img)
         self.destroy()
 
