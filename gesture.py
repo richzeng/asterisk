@@ -1,6 +1,11 @@
 def sqr_min_dist(point, line):
-    # the square of the minimum of the distance from point, 'point,'
-    # to the line segment, 'line'
+    """Returns the square of the minimum of the distance from point, 'point,'
+    to the line segment, 'line'
+
+    Arguments:
+    :param tuple point: The point in the form (x, y)
+    :param tuple line: The line in the form ((x1, y1), (x2, y2)
+    """
     x1, x2, x3 = line[0][0], line[1][0], point[0]
     y1, y2, y3 = line[0][1], line[1][1], point[1]
     if x2 == x1 and y2 == y1:
@@ -16,43 +21,60 @@ def error(gesture, points):
     n = len(points)
     return sum(min(sqr_min_dist(i, (points[x-1], points[x])) for x in range(1, n)) for i in gesture)
 
-THRESHOLD = 0.1
+def resize(gesture, points):
+    """Returns the ratio to multiply the points by, and the x, y shift to shift
+    them by.
+
+    Arguments:
+    :param list gesture: The gesture to resize the points to
+    :param list points: The points to resize
+    """
+    g_max_x, g_min_x = max(i[0] for i in gesture), min(i[0] for i in gesture)
+    g_size_x = g_max_x - g_min_x
+    g_max_y, g_min_y = max(i[1] for i in gesture), min(i[1] for i in gesture)
+    g_size_y = g_max_y - g_min_y
+        
+    p_max_x, p_min_x = max(i[0] for i in points), min(i[0] for i in points)
+    p_size_x = p_max_x - p_min_x
+    p_max_y, p_min_y = max(i[1] for i in points), min(i[1] for i in points)
+    p_size_y = p_max_y - p_min_y
+        
+    if p_size_x == 0:
+        if p_size_y == 0:
+            ratio = 1 # ?
+        else:
+            ratio = g_size_y * 1.0 / p_size_y
+    elif p_size_y == 0:
+        ratio = g_size_x * 1.0 / p_size_x
+    else:
+        ratio = (g_size_x * p_size_x + g_size_y * p_size_y)
+        ratio = ratio * 1.0 / (p_size_x**2 + p_size_y**2)
+
+    x_shift, y_shift = ratio*p_min_x - g_min_x, ratio*p_min_y - g_min_y
+
+    return (ratio, x_shift, y_shift)
+
+THRESHOLD = 0.01
 
 def match(gestures, points):
-    for index in range(len(gestures)):
-        gesture = gestures[index]
-        g_max_x, g_min_x = max(i[0] for i in gesture), min(i[0] for i in gesture)
-        g_size_x = g_max_x - g_min_x
-        g_max_y, g_min_y = max(i[1] for i in gesture), min(i[1] for i in gesture)
-        g_size_y = g_max_y - g_min_y
-        
-        p_max_x, p_min_x = max(i[0] for i in points), min(i[0] for i in points)
-        p_size_x = p_max_x - p_min_x
-        p_max_y, p_min_y = max(i[1] for i in points), min(i[1] for i in points)
-        p_size_y = p_max_y - p_min_y
-        
-        if p_size_x == 0:
-            if p_size_y == 0:
-                ratio = 1 # ?
-            else:
-                ratio = g_size_y * 1.0 / p_size_y
-        elif p_size_y == 0:
-            ratio = g_size_x * 1.0 / p_size_x
-        else:
-            ratio = (g_size_x * p_size_x + g_size_y * p_size_y)
-            ratio = ratio * 1.0 / (p_size_x**2 + p_size_y**2)
-        if ratio <= 0: continue
-        
-        resized_points = [(ratio*i[0], ratio*i[1]) for i in points]
+    """Finds matches to gestures in points
 
-        x_shift, y_shift = ratio*p_min_x - g_min_x, ratio*p_min_y - g_min_y
-        
-        repositioned_points = [(i[0] - x_shift, i[1] - y_shift) for i in resized_points]
-        
-        err = error(gesture, repositioned_points)
-        if err <= THRESHOLD:
-            print "Error for gesture", index, "=", err
-            return index
+    Arguments:
+    :param list gestures: a list of gesturesto compare to the points
+    :param list points: The list of positions of the hand
+    """
+    for n in range(len(points) - 1):
+        t_points = points[n:]
+        for index in range(len(gestures)):
+            gesture = gestures[index]
+            ratio, x_shift, y_shift = resize(gesture, t_points)
+            if ratio <= 0: continue
+            r_points = [(ratio*i[0], ratio*i[1]) for i in t_points]
+            r_points = [(i[0] - x_shift, i[1] - y_shift) for i in r_points]
+            err = error(gesture, r_points)
+            if err <= THRESHOLD:
+                print "Error for gesture", index, "=", err
+                return index
     return None
 
 sample_points = ((223, 189), (223, 187), (223, 184), (223, 182), (223, 179), (222, 176), (222, 173), (221, 170), (221, 167), (220, 164), (220, 161), (219, 158), (218, 155), (217, 151), (217, 148), (216, 145), (216, 142), (215, 138), (215, 135), (216, 132), (216, 129), (215, 125), (215, 122), (216, 120), (216, 117), (217, 113), (217, 110), (217, 107), (216, 103), (216, 99), (214, 95), (213, 92), (212, 89), (211, 87), (210, 87), (210, 89))

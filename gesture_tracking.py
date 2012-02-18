@@ -26,6 +26,13 @@ tm = cv.CreateImage((WINDOW_WIDTH-TPL_WIDTH+1, WINDOW_HEIGHT-TPL_HEIGHT+1),
                     cv.IPL_DEPTH_32F, 1)
 
 def get_rect(img, rect):
+    """Returns a rectangle based on the original, but within the bounds of
+    the image, shifting it around the image's boundaries.
+
+    Arguments:
+    :param cvImage img: The img to load the boundaries from
+    :param tuple rect: The initial rectangle to shift
+    """
     w = img.width
     h = img.height
     if rect[0] + rect[2] > w:
@@ -39,6 +46,13 @@ def get_rect(img, rect):
     return rect
 
 def trackobject(img, frame):
+    """Tracks the object, updating it's position, is_tracking, and past_point,
+    by finding the template, tpl in the image within an area
+
+    Arguments:
+    :param cvImage img: the image to search in. In grayscale
+    :param cvImage frame: the image in color (to draw the rectangle in)
+    """
     global object_x0, object_y0, is_tracking, past_points
     object_x0 -= (WINDOW_WIDTH - TPL_WIDTH) // 2
     object_y0 -= (WINDOW_HEIGHT - TPL_HEIGHT) // 2
@@ -66,6 +80,16 @@ def trackobject(img, frame):
 
 
 def mousecallback(event, x, y, flags, param):
+    """Handles mouseclicks by tracking the object at the click location.
+    Overrides the default cvImage mouse click.
+
+    Arguments:
+    :param thing event: The type of mouse click (left click, right click, etc.)
+    :param int x: the x position of the mouse click
+    :param int y: the y position of the mouse click
+    :param thing flags: no idea what this is.
+    :param thing param: no idea what this is.
+    """
     global gray, is_tracking, object_x0, object_y0, tpl
     if event == cv.CV_EVENT_LBUTTONUP:
         rect = get_rect(gray, (x - TPL_WIDTH // 2, y - TPL_HEIGHT // 2,
