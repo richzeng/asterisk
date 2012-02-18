@@ -1,30 +1,5 @@
 import gesture
-if __name__ == '__main__':
-    from cv2 import cv
-
-camcapture = cv.CreateCameraCapture(0)
-
-TPL_WIDTH= 15 # template width
-TPL_HEIGHT= 15 # template height
-WINDOW_WIDTH = 24 # search window width
-WINDOW_HEIGHT = 24 # search window height
-THRESHOLD = 0.2
-MAX_POINTS = 50
-
-frame = cv.QueryFrame(camcapture)
-
-object_x0 = cv.GetSize(frame)[0] // 2
-object_y0 = cv.GetSize(frame)[1] // 2
-is_tracking = False
-
-gray = cv.CreateImage(cv.GetSize(frame), cv.IPL_DEPTH_8U, 1)
-cv.CvtColor(frame, gray, cv.CV_RGB2GRAY)
-
-tpl = cv.CreateImage((TPL_WIDTH,TPL_HEIGHT), cv.IPL_DEPTH_8U, 1)
-
-# create image to store template matching result in
-tm = cv.CreateImage((WINDOW_WIDTH-TPL_WIDTH+1, WINDOW_HEIGHT-TPL_HEIGHT+1),
-                    cv.IPL_DEPTH_32F, 1)
+from cv2 import cv
 
 def get_rect(img, rect):
     """Returns a rectangle based on the original, but within the bounds of
@@ -102,28 +77,58 @@ def mousecallback(event, x, y, flags, param):
         print "Template selected. Start tracking"
         is_tracking = True
 
-cv.ShowImage("video", gray)
-cv.SetMouseCallback("video", mousecallback)
+def main():
+    global TPL_WIDTH, TPL_HEIGHT, WINDOW_WIDTH, WINDOW_HEIGHT, THRESHOLD
+    global MAX_POINTS, gray, past_points, is_tracking, tpl, tm
+    camcapture = cv.CreateCameraCapture(0)
 
-past_points = []
+    TPL_WIDTH= 15 # template width
+    TPL_HEIGHT= 15 # template height
+    WINDOW_WIDTH = 24 # search window width
+    WINDOW_HEIGHT = 24 # search window height
+    THRESHOLD = 0.2
+    MAX_POINTS = 50
 
-while True:
     frame = cv.QueryFrame(camcapture)
-    if frame is None:
-        break
-    cv.Flip(frame, frame, cv.CV_CVTIMG_FLIP)
+
+    object_x0 = cv.GetSize(frame)[0] // 2
+    object_y0 = cv.GetSize(frame)[1] // 2
+    is_tracking = False
+
+    gray = cv.CreateImage(cv.GetSize(frame), cv.IPL_DEPTH_8U, 1)
     cv.CvtColor(frame, gray, cv.CV_RGB2GRAY)
 
-    if is_tracking:
-        trackobject(gray, frame)
-        if len(past_points) == MAX_POINTS:
-            g = gesture.match(gesture.gestures, past_points)
-            if g != None:
-                print "Gesture detected! Gesture index =", g
-    cv.ShowImage("video", frame)
-    k=cv.WaitKey(10)
-    if k == 27:
-        break
+    tpl = cv.CreateImage((TPL_WIDTH,TPL_HEIGHT), cv.IPL_DEPTH_8U, 1)
 
-cv.DestroyWindow("video")
-del camcapture
+    # create image to store template matching result in
+    tm = cv.CreateImage((WINDOW_WIDTH-TPL_WIDTH+1, WINDOW_HEIGHT-TPL_HEIGHT+1),
+                        cv.IPL_DEPTH_32F, 1)
+    
+    cv.ShowImage("video", gray)
+    cv.SetMouseCallback("video", mousecallback)
+
+    past_points = []
+
+    while True:
+        frame = cv.QueryFrame(camcapture)
+        if frame is None:
+            break
+        cv.Flip(frame, frame, cv.CV_CVTIMG_FLIP)
+        cv.CvtColor(frame, gray, cv.CV_RGB2GRAY)
+
+        if is_tracking:
+            trackobject(gray, frame)
+            if len(past_points) == MAX_POINTS:
+                g = gesture.match(gesture.gestures, past_points)
+                if g != None:
+                    print "Gesture detected! Gesture index =", g
+        cv.ShowImage("video", frame)
+        k=cv.WaitKey(10)
+        if k == 27:
+            break
+
+    cv.DestroyWindow("video")
+    del camcapture
+
+if __name__ == '__main__':
+    main()
