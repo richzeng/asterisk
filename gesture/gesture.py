@@ -90,7 +90,7 @@ def resize(gesture, points, min_size):
 
     return (ratio, x_shift, y_shift)
 
-THRESHOLD = 0.2
+THRESHOLD = 0.3
 
 def compare(gesture, points):
     """ Returns the error between gesture and the points. Returns None is the
@@ -151,6 +151,7 @@ def match(gestures, points):
     :param list points: The list of positions of the hand
     """
     gesture_errors = [compare(gesture, points) for gesture in gestures]
+    print(gesture_errors)
     if len(gesture_errors) == 0 or all(e == None for e in gesture_errors):
         return None
     min_err = min(e for e in gesture_errors if e != None)
@@ -199,6 +200,6 @@ two_left = make_default_gesture("Two Left", 2, (-1, 0), (50, 0), terminal.move_l
 two_right = make_default_gesture("Two Right", 2, (1, 0), (50, 0), terminal.move_right, delay=1)
 two_up = make_default_gesture("Two Up", 2, (0, -1), (0, 50), terminal.move_up, delay=1)
 two_down = make_default_gesture("Two Down", 2, (0, 1), (0, 50), terminal.move_down, delay=1)
-two_together = Gesture("Two Together", [[(0, 0), (1, 0)], [(0, 0), (-1, 0)]], [(50, 0), (50, 0)], terminal.move_together, delay=1)
-two_away = Gesture("Two Away", [[(0, 0), (-1, 0)], [(0, 0), (1, 0)]], [(50, 0), (50, 0)], terminal.move_away, delay=1)
+two_together = Gesture("Two Together", [[(0, 0), (1, -0.1)], [(0, 0), (-1, -0.1)]], [(50, 0), (50, 0)], terminal.move_together, delay=1)
+two_away = Gesture("Two Away", [[(0, 0), (-1, 1)], [(0, 0), (1, 0.1)]], [(50, 0), (50, 0)], terminal.move_away, delay=1)
 gestures = [one_up, two_left, two_right, two_up, two_down, two_together, two_away]
