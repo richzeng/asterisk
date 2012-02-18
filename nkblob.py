@@ -2,7 +2,12 @@ import cv2
 from cv2 import cv
 import numpy
 from time import time
+import sys
+if sys.platform != 'win32':
+    print "Error: Non-windows OS can not run this."
+    exit()
 import win32api, win32con
+
 def changemousepos(x,y):
     win32api.SetCursorPos((x,y))
 def clickdown(x, y):
@@ -78,10 +83,7 @@ def connectedcomps2(img, cutoff, pastcomps):
 class BlobTracker:
     def __init__(self):
         cv.NamedWindow("Image",1)
-        cv.NamedWindow("Filtered",1)
         cv.NamedWindow("Threshold",1)
-        cv.NamedWindow("Postprocessed",1)
-        cv.NamedWindow("Test",1)
         self.capture = cv.CaptureFromCAM(0)
         
     def run(self):
@@ -224,11 +226,7 @@ class BlobTracker:
         self.destroy()
 
     def destroy(self):
-        cv.DestroyWindow("Image")
-        cv.DestroyWindow("Filtered")
-        cv.DestroyWindow("Threshold")
-        cv.DestroyWindow("Postprocessed")
-        cv.DestroyWindow("Test")
+        cv.DestroyAllWindows()
         del self.capture
 
 if __name__=="__main__":

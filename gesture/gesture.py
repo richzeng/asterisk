@@ -151,7 +151,6 @@ def match(gestures, points):
     :param list points: The list of positions of the hand
     """
     gesture_errors = [compare(gesture, points) for gesture in gestures]
-    print(gesture_errors)
     if len(gesture_errors) == 0 or all(e == None for e in gesture_errors):
         return None
     min_err = min(e for e in gesture_errors if e != None)
