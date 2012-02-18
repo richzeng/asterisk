@@ -21,6 +21,12 @@ class Gesture():
     def execute(self):
         self.command()
 
+def is_between(x1, x2, x):
+    if x1 <= x2:
+        return x1 <= x and x2 >= x
+    else:
+        return x2 <= x and x1 >= x
+
 def sqr_min_dist(point, line):
     """Returns the square of the minimum of the distance from point, 'point,'
     to the line segment, 'line'
@@ -35,7 +41,7 @@ def sqr_min_dist(point, line):
     u = ((x3-x1)*(x2-x1) + (y3-y1)*(y2-y1)) / ((x2-x1)**2 + (y2-y1)**2)
     x = x1 + u * (x2 - x1)
     y = y1 + u * (y2 - y1)
-    if x1 <= x and x2 >= x and y1 <= y and y2 >= y:
+    if is_between(x1, x2, x) and is_between(y1, y2, y):
         return (x3-x)**2 + (y3-y)**2
     return min((x3-x1)**2+(y3-y1)**2, (x3-x2)**2+(y3-y2)**2)
 
@@ -84,7 +90,6 @@ def resize(gesture, points, min_size):
     else:
         ratio = (g_size_x * p_size_x + g_size_y * p_size_y)
         ratio = ratio * 1.0 / (p_size_x**2 + p_size_y**2)
-
     x_shift, y_shift = ratio*p_min_x - g_min_x, ratio*p_min_y - g_min_y
 
     return (ratio, x_shift, y_shift)
@@ -107,16 +112,14 @@ def compare(gesture, points):
             ratio, x_shift, y_shift = resize(waypoints, t_points, min_size)
                 
             sgn_p_x = cmp(t_points[-1][0] - t_points[0][0], 0)
-            sgn_p_y = -cmp(t_points[-1][1] - t_points[0][1], 0)
+            sgn_p_y = cmp(t_points[-1][1] - t_points[0][1], 0)
             if sgn_g_x != 0 and sgn_p_x != 0 and sgn_g_x != sgn_p_x: continue
             if sgn_g_y != 0 and sgn_p_y != 0 and sgn_g_y != sgn_p_y: continue
-                
             if ratio == None: continue
             if ratio <= 0: continue
             r_points = [(ratio*i[0], ratio*i[1]) for i in t_points]
             r_points = [(i[0] - x_shift, i[1] - y_shift) for i in r_points]
             err = error(waypoints, r_points)
-            #if s == 0: print(r_points, n, waypoints, err, gesture.name)
             if min_err == None:
                 min_err = err
             else:
@@ -161,8 +164,8 @@ sample_points = [[(223, 189)], [(223, 187)], [(223, 184)], [(223, 182)], [(223, 
 one_up = Gesture("One Up", [[(0, 0), (0, 1)]], [(0, 50)])
 two_left = make_default_gesture("Two Left", 2, (-1, 0), (50, 0), mouse.move_left)
 two_right = make_default_gesture("Two Right", 2, (1, 0), (50, 0), mouse.move_right)
-two_up = make_default_gesture("Two Up", 2, (0, 1), (0, 50), mouse.move_up)
-two_down = make_default_gesture("Two Down", 2, (0, -1), (0, 50), mouse.move_down)
+two_up = make_default_gesture("Two Up", 2, (0, -1), (0, 50), mouse.move_up)
+two_down = make_default_gesture("Two Down", 2, (0, 1), (0, 50), mouse.move_down)
 two_together = Gesture("Two Together", [[(0, 0), (1, 0)], [(0, 0), (-1, 0)]], [(50, 0), (50, 0)])
 two_away = Gesture("Two Away", [[(0, 0), (-1, 0)], [(0, 0), (1, 0)]], [(50, 0), (50, 0)])
 gestures = [one_up, two_left, two_right, two_up, two_down, two_together, two_away]
