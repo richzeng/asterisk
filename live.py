@@ -23,4 +23,4 @@ if __name__ == '__main__':
     f = FingerTracker()
     def run(ti):
         f.run(ti)
-    util.run_async(run, gesture_consumer)
+    util.run_async_consumer(run, gesture_consumer)
