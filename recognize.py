@@ -1,7 +1,6 @@
-from gesture import *
+from gesture import gesture
+import sys
 
-import sys, os
-sys.path.insert(0, os.path.abspath('..'))
 import tracking
 from tracking import util
 
@@ -15,7 +14,7 @@ def gesture_consumer(to):
         if len(to) > 2:
             if most_recent != to[-1][1]:
                 most_recent = to[-1][1]
-                g = match(gestures, map(lambda x: x[0], to))
+                g = gesture.match(gesture.gestures, map(lambda x: x[0], to))
                 if g != None:
                     g.execute()
                 else:
