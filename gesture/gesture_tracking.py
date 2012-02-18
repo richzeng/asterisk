@@ -1,6 +1,12 @@
 import gesture
 from cv2 import cv
 
+import sys, os
+sys.path.insert(0, os.path.abspath('..'))
+import tracking
+
+MAX_POINTS = 50
+
 def get_rect(img, rect):
     """Returns a rectangle based on the original, but within the bounds of
     the image, shifting it around the image's boundaries.
@@ -20,14 +26,14 @@ def get_rect(img, rect):
         rect = (rect[0], 0, rect[2], rect[3])
     return rect
 
-def trackobject(img, frame):
+def trackobject(img, frame, ti):
     """Tracks the object, updating it's position, is_tracking, and past_point,
     by finding the template, tpl in the image within an area
 
     :param cvImage img: the image to search in. In grayscale
     :param cvImage frame: the image in color (to draw the rectangle in)
     """
-    global object_x0, object_y0, is_tracking, past_points
+    global object_x0, object_y0, is_tracking
     object_x0 -= (WINDOW_WIDTH - TPL_WIDTH) // 2
     object_y0 -= (WINDOW_HEIGHT - TPL_HEIGHT) // 2
     rect = get_rect(img, (object_x0, object_y0, WINDOW_WIDTH, WINDOW_HEIGHT))
@@ -40,9 +46,7 @@ def trackobject(img, frame):
         object_x0 = rect[0]
         object_y0 = rect[1]
         
-        past_points.append((object_x0, object_y0))
-        if len(past_points) > MAX_POINTS:
-            past_points = past_points[1:]
+        ti.add_positions( [[object_x0, object_y0]] + [ [0,0] for x in xrange(9) ] )
         
         cv.Rectangle(frame, (object_x0, object_y0),
                      (object_x0+TPL_WIDTH, object_y0+TPL_HEIGHT),
@@ -75,7 +79,7 @@ def mousecallback(event, x, y, flags, param):
         print "Template selected. Start tracking"
         is_tracking = True
 
-def main():
+def tracking_producer(ti):
     global TPL_WIDTH, TPL_HEIGHT, WINDOW_WIDTH, WINDOW_HEIGHT, THRESHOLD
     global MAX_POINTS, gray, past_points, is_tracking, tpl, tm
     camcapture = cv.CreateCameraCapture(0)
@@ -105,8 +109,6 @@ def main():
     cv.ShowImage("video", gray)
     cv.SetMouseCallback("video", mousecallback)
 
-    past_points = []
-
     while True:
         frame = cv.QueryFrame(camcapture)
         if frame is None:
@@ -115,11 +117,8 @@ def main():
         cv.CvtColor(frame, gray, cv.CV_RGB2GRAY)
 
         if is_tracking:
-            trackobject(gray, frame)
-            if len(past_points) == MAX_POINTS:
-                g = gesture.match(gesture.gestures, past_points)
-                if g != None:
-                    print "Gesture detected! Gesture index =", g
+            trackobject(gray, frame, ti)
+
         cv.ShowImage("video", frame)
         k=cv.WaitKey(10)
         if k == 27:
@@ -128,5 +127,16 @@ def main():
     cv.DestroyWindow("video")
     del camcapture
 
+def tracking_consumer(to):
+    while True:
+        to.flush()
+        if len(to) > MAX_POINTS:
+            del to[:-MAX_POINTS]
+        if len(to) == MAX_POINTS:
+            g = gesture.match(gesture.gestures, map(lambda x: x[0][0], to))
+            if g != None:
+                print "Gesture detected! Gesture index =", g
+
+
 if __name__ == '__main__':
-    main()
+    tracking.util.run_async(tracking_producer, tracking_consumer)
