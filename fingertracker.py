@@ -15,7 +15,7 @@ class FingerTracker(object):
         """
         cv.NamedWindow("Camera",1)
         #cv.NamedWindow("Image",1)
-        #cv.NamedWindow("Output",1)
+        cv.NamedWindow("Output",1)
         self.capture = cv.CaptureFromCAM(0)
 
     def filter1(self, img, img_display):
@@ -40,7 +40,7 @@ class FingerTracker(object):
 
         return threshold_total
 
-    def filter2(self, img, img_display, g_low=75, g_hi=150, h_low=55, h_hi=95, s_low=50, s_hi=255):
+    def filter2(self, img, img_display, g_low=80, g_hi=150, h_low=45, h_hi=105, s_low=100, s_hi=255):
         """Run filter method 2 on an image, returing a black-and-white version of it
 
         :param img: Input image (RGB)
@@ -140,7 +140,7 @@ class FingerTracker(object):
             self.add_two_positions(ti, c)
 
             cv.ShowImage("Camera", img_display)
-            #cv.ShowImage("Output", img)
+            cv.ShowImage("Output", img)
         self.destroy()
 
     def destroy(self):
@@ -148,7 +148,7 @@ class FingerTracker(object):
         """
         cv.DestroyWindow("Camera")
         #cv.DestroyWindow("Image")
-        #cv.DestroyWindow("Output")
+        cv.DestroyWindow("Output")
         del self.capture
 
 
