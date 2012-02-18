@@ -1,21 +1,67 @@
 import cv2
 from cv2 import cv
 import numpy
-def connectedcomps(img):
+from time import time
+def connectedcomps(img, cutoff):
     rows, columns = cv.GetSize(img)
+    rowcutoff, colcutoff = int(rows*cutoff), int(columns*cutoff)
     imgc = cv.CreateImage(cv.GetSize(img), 8, 1)
     cv.Copy(img, imgc)
     def getconnectedcomp(x, y):
         imgarr = numpy.asarray(cv.GetMat(imgc))
         if(imgarr[y][x] == 255):
+            return cv.FloodFill(imgc, (x, y), 255, 0, 0)
+        else: return (0, 0, 0)
+    complist = list(getconnectedcomp(x, y) for x in range(rowcutoff, rows-rowcutoff, 20) for y in range(colcutoff,columns-colcutoff,20))
+    complist = sorted(filter(lambda comp: comp[0] > 700, complist), key = lambda comp: comp[0])
+    for comp in complist:
+        x, y, width, height = comp[-1]
+        x1, x2, y1, y2 = x, x + width, y, y + height
+        cv.Rectangle(img, (x1, y1), (x2, y2), (255, 0, 0))
+    
+
+#Get rectangle enclosing list of Connected Components
+def getCompRect(complist):
+    minx, miny, maxx, maxy = 100000, 100000, 0, 0
+    for comp in complist:
+        x, y, width, height = comp[-1]
+        if(x < minx): minx = x
+        if(y < miny): miny = y
+        if(x + width > maxx): maxx = x
+        if(y + height > maxy): maxy = y
+    return (minx, miny, maxx, maxy)
+
+def getSearchSpace(pastCompRect, prcnt, screenSize):
+    rows, columns = screenSize
+    minx, miny, maxx, maxy = pastCompRect
+    minx = max(0, int(minx - prcnt*(maxx - minx)))
+    maxx = min(rows, int(maxx + prcnt*(maxx - minx)))
+    miny = max(0, int(miny - prcnt*(maxy - miny)))
+    maxy = min(columns, int(maxy + prcnt*(maxy - miny)))
+    return minx, maxx, miny, maxy
+    
+def connectedcomps2(img, cutoff, pastcomps):
+    rows, columns = cv.GetSize(img)
+    rowscutoff, colcutoff = int(rows*cutoff), int(columns*cutoff)
+    if(pastcomps):
+        pastCompRect = getCompRect(pastcomps)
+        minx, maxx, miny, maxy = getSearchSpace(pastCompRect, 0.20, (rows, columns))
+    else:
+        minx, maxx, miny, maxy = rowscutoff, rows-rowscutoff, colcutoff, columns-colcutoff
+    imgc = cv.CreateImage(cv.GetSize(img), 8, 1)
+    cv.Copy(img, imgc)
+    def getconnectedcomp(x, y):
+        if(cv.Get2D(imgc, y, x)[0] == 255):
             return cv.FloodFill(imgc, (x, y), 125, 0, 0)
         else: return (0, 0, 0)
-    complist = list(getconnectedcomp(x, y) for x in range(0, rows-10, 20) for y in range(0,columns-10,20))
+    complist = list(getconnectedcomp(x, y) for x in range(minx, maxx, 20) for y in range(miny, maxy,20))
     complist = sorted(filter(lambda comp: comp[0] > 0, complist), key = lambda comp: comp[0])
     for comp in complist:
         x, y, width, height = comp[-1]
         x1, x2, y1, y2 = x, x + width, y, y + height
         cv.Rectangle(img, (x1, y1), (x2, y2), (255, 0, 0))
+    return complist
+    
 class BlobTracker:
     def __init__(self):
         cv.NamedWindow("Image",1)
@@ -46,6 +92,7 @@ class BlobTracker:
         self.destroy()
 
     def run2(self):
+        pastcomps = []
         while cv.WaitKey(10) != 27:
             img = cv.QueryFrame(self.capture)
             cv.Flip(img,img,1)
@@ -58,7 +105,7 @@ class BlobTracker:
 
             cv.Smooth(g, g, cv.CV_BLUR, 4)
             threshold_g = cv.CreateImage(cv.GetSize(img), 8, 1)
-            cv.InRangeS(g, 75, 150, threshold_g)
+            cv.InRangeS(g, 65, 160, threshold_g)
 
             cv.CvtColor(img, img, cv.CV_BGR2HSV)
             h = cv.CreateImage(cv.GetSize(img), 8, 1)
@@ -72,14 +119,17 @@ class BlobTracker:
 
             threshold_total = cv.CreateImage(cv.GetSize(img), 8, 1)
             cv.InRangeS(h, 55, 95, threshold_h)
-            cv.InRangeS(s, 35, 255, threshold_s)
+            cv.InRangeS(s, 50, 255, threshold_s)
             cv.And(threshold_h, threshold_s, threshold_total)
             cv.And(threshold_total, threshold_g, threshold_total)
             cv.ShowImage("Filtered", threshold_total)
 
             cv.Smooth(threshold_total, threshold_total, cv.CV_BLUR, 11)
             cv.Threshold(threshold_total, threshold_total, 100, 255, cv.CV_THRESH_BINARY)
-            connectedcomps(threshold_total)
+            t = time()
+            #connectedcomps(threshold_total, 0.20)
+            pastcomps = connectedcomps2(threshold_total, 0.20, pastcomps)
+            #print(time() - t)
             cv.ShowImage("Threshold", threshold_total)
 
 
