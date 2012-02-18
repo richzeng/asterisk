@@ -12,6 +12,7 @@ Contents:
    :maxdepth: 2
 
    tracking
+   gesture
 
 Indices and tables
 ==================
