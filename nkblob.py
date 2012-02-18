@@ -82,11 +82,18 @@ class BlobTracker:
                     y = cv.GetSpatialMoment(moments, 0, 1)/area
                     print('x:{0} y{1} area:{2}'.format(x,y,area))
 
+            do_box = True
+            if do_box:
+                storage = cv.CreateMemStorage(0)
+                obj = cv.FindContours(threshold_total, storage, cv.CV_RETR_CCOMP, cv.CV_CHAIN_APPROX_SIMPLE)
+                box = cv.BoundingRect(obj)
+                print((box[0]+(box[2]/2), box[1]+(box[3]/2)))
+                cv.Rectangle(img, (box[0], box[1]), (box[0] + box[2], box[1] + box[3]),(255,0,0),1,8,0)
+
             cv.ShowImage("Eroded", threshold_total)
             cv.ShowImage("Image", img)
-            #cv.ShowImage(window_rgb, img)
         self.destroy()
-    
+
     def destroy(self):
         cv.DestroyWindow("Hue")
         cv.DestroyWindow("Saturation")
