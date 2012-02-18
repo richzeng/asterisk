@@ -159,7 +159,7 @@ def match(gestures, points):
     return gestures[index]
 
 def make_default_gesture(name, count, end, default_size, command=None, delay=0):
-    return Gesture(name, [[(0, 0), end] for i in range(count)], [default_size for i in range(count)], command)
+    return Gesture(name, [[(0, 0), end] for i in range(count)], [default_size for i in range(count)], command, delay)
 
 def gesture_consumer(to):
     MAX_POINTS = 150
