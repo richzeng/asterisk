@@ -5,6 +5,7 @@ from random import randint
 from multiprocessing import Queue, Process
 from Queue import Empty, Full
 import json
+from cv2 import cv
 
 def random_producer(ti):
     """A producer that outputs random finger positions
@@ -26,6 +27,25 @@ def print_consumer(to):
         for pos, timestamp in to:
             print "{}: {}".format(int(timestamp), pos)
         to.clear()
+
+def visualize_consumer(to):
+    """A consumer that visualizes the data on an image
+
+    :param TrackerOut to: A TrackerOut objects that receives data
+    """
+    cv.NamedWindow("Image")
+    img = cv.CreateImage((600, 600), 8, 1)
+    while cv.WaitKey(10) != 27:
+        to.flush()
+        cv.Set(img, (0,0,0))
+        for pos, timestamp in to:
+            for finger in pos:
+                if finger is not None:
+                    cv.Rectangle(img, (finger[0]-4, finger[1]-4), (finger[0]+4, finger[1]+4), (255,0,0))
+            print "{}: {}".format(int(timestamp), pos)
+            cv.ShowImage("Image", img)
+        to.clear()
+    cv.DestroyWindow("Image")
 
 def file_consumer(filename):
     """A consumer that saves data to a file when you press ctrl-c
@@ -54,8 +74,8 @@ def file_producer(filename):
     f.close()
     def p(ti):
         while len(l) > 0:
-            positions = l.pop(0)
-            ti.add_positions(positions)
+            positions, timestamp = l.pop(0)
+            ti.add_positions(positions, timestamp=timestamp)
             sleep(0.5)
     return p
 
@@ -134,3 +154,4 @@ def consume_from_file(consumer, filename):
     :param string filename: Name of filename to load data from
     """
     run_async_consumer(file_producer(filename), consumer)
+

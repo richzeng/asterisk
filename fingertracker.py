@@ -75,6 +75,11 @@ class FingerTracker(object):
         return threshold_total
 
     def connectedcomps(self, img):
+        """Finds connected components in image
+
+        :param img: A CV image to search for connected components
+        :return: A list of coordinate pairs where there are points
+        """
         rows, columns = cv.GetSize(img)
         imgc = cv.CreateImage(cv.GetSize(img), 8, 1)
         cv.Copy(img, imgc)
@@ -86,17 +91,35 @@ class FingerTracker(object):
                 return (0, 0, 0)
         complist = list(getconnectedcomp(x, y) for x in range(0, rows-10, 20) for y in range(0,columns-10,20))
         complist = sorted(filter(lambda comp: comp[0] > 0, complist), key = lambda comp: comp[0])
+
+        ret = []
         for comp in complist:
             area = comp[0]
             if area < 400 or area > 6000:
                 continue
             x, y, width, height = comp[-1]
-            if float(abs(width-height))/min(width,height) > 0.15:
+            if float(abs(width-height))/min(width,height) > 0.25:
                 continue
-            print comp
+
             x1, x2, y1, y2 = x, x + width, y, y + height
             cv.Rectangle(img, (x1, y1), (x2, y2), (255, 0, 0))
+            ret += [  [(x1+x2)/2, (y1+y2)/2 ]  ]
+        return ret
 
+    def add_two_positions(self, ti, positions):
+        """Adds two finger positions to ti
+
+        :param ti: TrackerIn object
+        :param list positions: List of (x,y) coordinates
+        """
+        if len(positions) != 2:
+            # Only add if there are two tracked positions, anything else may be an error
+            return
+
+        if positions[0][0] < positions[1][0]:
+            ti.add_positions( positions)
+        else:
+            ti.add_positions( positions[::-1])
 
     def run(self, ti):
         """Run the algorithm
@@ -109,7 +132,8 @@ class FingerTracker(object):
             cv.ShowImage("Image", img)
 
             img = self.filter2(img)
-            self.connectedcomps(img)
+            c = self.connectedcomps(img)
+            self.add_two_positions(ti, c)
             cv.ShowImage("Output", img)
         self.destroy()
 
