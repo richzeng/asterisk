@@ -22,12 +22,6 @@ class Gesture():
     def execute(self):
         self.command()
 
-def is_between(x1, x2, x):
-    if x1 <= x2:
-        return x1 <= x and x2 >= x
-    else:
-        return x2 <= x and x1 >= x
-
 def sqr_min_dist(point, line):
     """Returns the square of the minimum of the distance from point, 'point,'
     to the line segment, 'line'
@@ -35,6 +29,7 @@ def sqr_min_dist(point, line):
     :param tuple point: The point in the form (x, y)
     :param tuple line: The line in the form ((x1, y1), (x2, y2)
     """
+    is_between = lambda x1, x2, x: x1 <= x and x2 >= x if x1 <= x2 else x2 <= x and x1 >= x
     x1, x2, x3 = line[0][0], line[1][0], point[0]
     y1, y2, y3 = line[0][1], line[1][1], point[1]
     if x2 == x1 and y2 == y1:
@@ -98,6 +93,12 @@ def resize(gesture, points, min_size):
 THRESHOLD = 0.2
 
 def compare(gesture, points):
+    """ Returns the error between gesture and the points. Returns None is the
+    points are invalid towards this gesture.
+
+    :param list gesture: a list of waypoints for this gesture
+    :param list points: a list of points to check against this gesture
+    """
     finger_count = len(points[0])
     if gesture.finger_num != finger_count:
         return None
@@ -187,6 +188,9 @@ def gesture_consumer(to):
 sample_points = [[(223, 189)], [(223, 187)], [(223, 184)], [(223, 182)], [(223, 179)], [(222, 176)], [(222, 173)], [(221, 170)], [(221, 167)], [(220, 164)], [(220, 161)], [(219, 158)], [(218, 155)], [(217, 151)], [(217, 148)], [(216, 145)], [(216, 142)], [(215, 138)], [(215, 135)], [(216, 132)], [(216, 129)], [(215, 125)], [(215, 122)], [(216, 120)], [(216, 117)], [(217, 113)], [(217, 110)], [(217, 107)], [(216, 103)], [(216, 99)], [(214, 95)], [(213, 92)], [(212, 89)], [(211, 87)], [(210, 87)], [(210, 89)]]
 
 one_up = Gesture("One Up", [[(0, 0), (0, -1)]], [(0, 50)])
+one_down = Gesture("One Down", [[(0, 0), (0, 1)]], [(0, 50)])
+one_left = Gesture("One Left", [[(0, 0), (-1, 0)]], [(50, 0)])
+one_right = Gesture("One Right", [[(0, 0), (1, 0)]], [(50, 0)])
 #two_left = make_default_gesture("Two Left", 2, (-1, 0), (50, 0), mouse.move_left)
 #two_right = make_default_gesture("Two Right", 2, (1, 0), (50, 0), mouse.move_right)
 #two_up = make_default_gesture("Two Up", 2, (0, -1), (0, 50), mouse.move_up)
