@@ -5,7 +5,6 @@ def get_rect(img, rect):
     """Returns a rectangle based on the original, but within the bounds of
     the image, shifting it around the image's boundaries.
 
-    Arguments:
     :param cvImage img: The img to load the boundaries from
     :param tuple rect: The initial rectangle to shift
     """
@@ -25,7 +24,6 @@ def trackobject(img, frame):
     """Tracks the object, updating it's position, is_tracking, and past_point,
     by finding the template, tpl in the image within an area
 
-    Arguments:
     :param cvImage img: the image to search in. In grayscale
     :param cvImage frame: the image in color (to draw the rectangle in)
     """
@@ -59,7 +57,6 @@ def mousecallback(event, x, y, flags, param):
     """Handles mouseclicks by tracking the object at the click location.
     Overrides the default cvImage mouse click.
 
-    Arguments:
     :param thing event: The type of mouse click (left click, right click, etc.)
     :param int x: the x position of the mouse click
     :param int y: the y position of the mouse click
