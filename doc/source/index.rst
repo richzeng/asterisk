@@ -13,6 +13,7 @@ Contents:
 
    tracking
    gesture
+   finger
 
 Indices and tables
 ==================

@@ -1,5 +1,5 @@
-Gesture API
-=================
+Gesture Recognizer
+==================
 
 .. automodule:: gesture
    :members:

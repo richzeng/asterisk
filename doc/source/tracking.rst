@@ -1,5 +1,5 @@
-Tracking API
-============
+Asynchronous Tracking and Communications API
+============================================
 
 .. automodule:: tracking
    :members:
