@@ -1,22 +1,80 @@
 import cv2
 from cv2 import cv
 import numpy
-def connectedcomps(img):
+from time import time
+import win32api, win32con
+def changemousepos(x,y):
+    win32api.SetCursorPos((x,y))
+def clickdown(x, y):
+    changemousepos(x,y)
+    win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN,x,y,0,0)
+def clickup(x, y):
+    changemousepos(x,y)
+    win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP,x,y,0,0)
+
+
+
+def connectedcomps(img, cutoff):
     rows, columns = cv.GetSize(img)
+    rowcutoff, colcutoff = int(rows*cutoff), int(columns*cutoff)
     imgc = cv.CreateImage(cv.GetSize(img), 8, 1)
     cv.Copy(img, imgc)
     def getconnectedcomp(x, y):
         imgarr = numpy.asarray(cv.GetMat(imgc))
         if(imgarr[y][x] == 255):
+            return cv.FloodFill(imgc, (x, y), 255, 0, 0)
+        else: return (0, 0, 0)
+    complist = list(getconnectedcomp(x, y) for x in range(rowcutoff, rows-rowcutoff, 20) for y in range(colcutoff,columns-colcutoff,20))
+    complist = set(sorted(filter(lambda comp: comp[0] > 700, complist), key = lambda comp: comp[0]))
+    for comp in complist:
+        x, y, width, height = comp[-1]
+        x1, x2, y1, y2 = x, x + width, y, y + height
+        cv.Rectangle(img, (x1, y1), (x2, y2), (255, 0, 0))
+    return complist
+    
+
+#Get rectangle enclosing list of Connected Components
+def getCompRect(complist):
+    minx, miny, maxx, maxy = 100000, 100000, 0, 0
+    for comp in complist:
+        x, y, width, height = comp[-1]
+        if(x < minx): minx = x
+        if(y < miny): miny = y
+        if(x + width > maxx): maxx = x
+        if(y + height > maxy): maxy = y
+    return (minx, miny, maxx, maxy)
+
+def getSearchSpace(pastCompRect, prcnt, screenSize):
+    rows, columns = screenSize
+    minx, miny, maxx, maxy = pastCompRect
+    minx = max(0, int(minx - prcnt*(maxx - minx)))
+    maxx = min(rows, int(maxx + prcnt*(maxx - minx)))
+    miny = max(0, int(miny - prcnt*(maxy - miny)))
+    maxy = min(columns, int(maxy + prcnt*(maxy - miny)))
+    return minx, maxx, miny, maxy
+    
+def connectedcomps2(img, cutoff, pastcomps):
+    rows, columns = cv.GetSize(img)
+    rowscutoff, colcutoff = int(rows*cutoff), int(columns*cutoff)
+    if(pastcomps):
+        pastCompRect = getCompRect(pastcomps)
+        minx, maxx, miny, maxy = getSearchSpace(pastCompRect, 0.20, (rows, columns))
+    else:
+        minx, maxx, miny, maxy = rowscutoff, rows-rowscutoff, colcutoff, columns-colcutoff
+    imgc = cv.CreateImage(cv.GetSize(img), 8, 1)
+    cv.Copy(img, imgc)
+    def getconnectedcomp(x, y):
+        if(cv.Get2D(imgc, y, x)[0] == 255):
             return cv.FloodFill(imgc, (x, y), 125, 0, 0)
         else: return (0, 0, 0)
-    complist = list(getconnectedcomp(x, y) for x in range(0, rows-10, 20) for y in range(0,columns-10,20))
+    complist = list(getconnectedcomp(x, y) for x in range(minx, maxx, 20) for y in range(miny, maxy,20))
     complist = sorted(filter(lambda comp: comp[0] > 0, complist), key = lambda comp: comp[0])
     for comp in complist:
         x, y, width, height = comp[-1]
         x1, x2, y1, y2 = x, x + width, y, y + height
         cv.Rectangle(img, (x1, y1), (x2, y2), (255, 0, 0))
-
+    return complist
+    
 class BlobTracker:
     def __init__(self):
         cv.NamedWindow("Image",1)
@@ -25,13 +83,7 @@ class BlobTracker:
         cv.NamedWindow("Postprocessed",1)
         cv.NamedWindow("Test",1)
         self.capture = cv.CaptureFromCAM(0)
-
-        self.g_low = 75
-        self.g_hi = 150
-        self.h_low = 55
-        self.h_hi = 95
-        self.s_low = 35
-        self.s_hi = 255
+        
     def run(self):
         while cv.WaitKey(10) != 27:
             img = cv.QueryFrame(self.capture)
@@ -48,31 +100,13 @@ class BlobTracker:
             cv.Threshold(h, threshold_h, 15, 255, cv.CV_THRESH_BINARY)
             cv.Merge(threshold_h, s, v, None, img)
             cv.CvtColor(img, img, cv.CV_HSV2BGR)
-            cv.ShowImage("Hue", threshold_h)
-            cv.ShowImage("Image", img)
-        self.destroy()
-
-    def run2a(self):
-        while cv.WaitKey(10) != 27:
-            img = cv.QueryFrame(self.capture)
-            cv.Flip(img,img,1)
-            cv.CvtColor(img, img, cv.CV_BGR2HSV)
-            h = cv.CreateImage(cv.GetSize(img), 8, 1)
-            s = cv.CreateImage(cv.GetSize(img), 8, 1)
-            v = cv.CreateImage(cv.GetSize(img), 8, 1)
-            cv.Split(img, h, s, v, None)
-            threshold_h = cv.CreateImage(cv.GetSize(img), 8, 1)
-            threshold_s = cv.CreateImage(cv.GetSize(img), 8, 1)
-            threshold_total = cv.CreateImage(cv.GetSize(img), 8, 1)
-            cv.Threshold(h, threshold_h, 65, 255, cv.CV_THRESH_BINARY)
-            cv.Threshold(s, threshold_s, 125, 255, cv.CV_THRESH_BINARY)
-            cv.And(threshold_h, threshold_s, threshold_total)
-            cv.ShowImage("Image", img)
-            connectedcomps(threshold_total) # FLOOD FILL
-            cv.ShowImage("Filtered", threshold_total)
+            #cv.ShowImage("Hue", threshold_h)
+            #cv.ShowImage("Image", img)
         self.destroy()
 
     def run2(self):
+        pastcomps = []
+        mouse_down = False
         while cv.WaitKey(10) != 27:
             img = cv.QueryFrame(self.capture)
             cv.Flip(img,img,1)
@@ -85,7 +119,7 @@ class BlobTracker:
 
             cv.Smooth(g, g, cv.CV_BLUR, 4)
             threshold_g = cv.CreateImage(cv.GetSize(img), 8, 1)
-            cv.InRangeS(g, self.g_low, self.g_hi, threshold_g)
+            cv.InRangeS(g, 65, 160, threshold_g)
 
             cv.CvtColor(img, img, cv.CV_BGR2HSV)
             h = cv.CreateImage(cv.GetSize(img), 8, 1)
@@ -98,15 +132,62 @@ class BlobTracker:
 
 
             threshold_total = cv.CreateImage(cv.GetSize(img), 8, 1)
-            cv.InRangeS(h, self.h_low, self.h_hi, threshold_h)
-            cv.InRangeS(s, self.s_low, self.s_hi, threshold_s)
+            cv.InRangeS(h, 55, 95, threshold_h)
+            cv.InRangeS(s, 50, 255, threshold_s)
             cv.And(threshold_h, threshold_s, threshold_total)
             cv.And(threshold_total, threshold_g, threshold_total)
-            cv.ShowImage("Filtered", threshold_total)
+            #cv.ShowImage("Filtered", threshold_total)
 
             cv.Smooth(threshold_total, threshold_total, cv.CV_BLUR, 11)
             cv.Threshold(threshold_total, threshold_total, 100, 255, cv.CV_THRESH_BINARY)
-            connectedcomps(threshold_total) # FLOOD FILL
+            t = time()
+            comps = connectedcomps(threshold_total, 0.10)
+            '''
+            if(len(comps)<=1):
+                comps = list(comps)
+                if(len(comps)==1): x1, y1, width1, height1 = comps[0][-1]
+                #x2, y2, width2, height2 = comps[1][-1]
+                #x1, x2 = int(x1*(1360/700.)), int(x2*(1360/700.))
+                #y1, y2 = int(y1*(768/520.)), int(y1*(768/520.))
+                #x1, y1 = x1 + width1//2, y1 + height1//2
+                #x2, y2 = x2 + width2//2, y2 + height2//2
+                #print((x1-x2)**2 + (y1-y2)**2, x1, y1, x2, y2)
+                if(len(comps)==0):
+                    if(not mouse_down):
+                        mouse_down = True
+                        clickdown(x1, y1)
+                    elif(mouse_down):
+                        changemousepos(x1, y1)
+                elif(mouse_down):
+                    mouse_down = False
+                    clickup(x1, y1)
+                else:
+                    changemousepos(x1, y1)
+            '''
+            if(len(comps)==2):
+                comps = list(comps)
+                x1, y1, width1, height1 = comps[0][-1]
+                x2, y2, width2, height2 = comps[1][-1]
+                x1, y1 = x1 + width1//2, y1 + height1//2
+                x2, y2 = x2 + width2//2, y2 + height2//2
+                x1, x2 = int(x1*(1360/650.)), int(x2*(1360/650.))
+                y1, y2 = int(y1*(768/480.)), int(y2*(768/480.))
+                
+                #print((x1-x2)**2 + (y1-y2)**2, x1, y1, x2, y2)
+                if((x1-x2)**2 + (y1-y2)**2 < 12000):
+                    if(not mouse_down):
+                        mouse_down = True
+                        clickdown((x1+x2)//2, (y1 + y2)//2)
+                    elif(mouse_down):
+                        changemousepos((x1+x2)//2, (y1+y2)//2)
+                elif(mouse_down):
+                    mouse_down = False
+                    clickup((x1+x2)//2, (y1 + y2)//2)
+                else:
+                    changemousepos((x1+x2)//2, (y1+y2)//2)
+            
+            #pastcomps = connectedcomps2(threshold_total, 0.20, pastcomps)
+            #print(time() - t)
             cv.ShowImage("Threshold", threshold_total)
 
 
@@ -138,6 +219,7 @@ class BlobTracker:
                 cv.Rectangle(img, (box[0], box[1]), (box[0] + box[2], box[1] + box[3]),(255,0,0),1,8,0)
 
             #cv.ShowImage("Postprocessed", r)
+
             #cv.ShowImage("Test", threshold_g)
         self.destroy()
 
