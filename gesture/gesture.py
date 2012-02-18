@@ -27,13 +27,23 @@ def sqr_min_dist(point, line):
     return min((x3-x1)**2+(y3-y1)**2, (x3-x2)**2+(y3-y2)**2)
 
 def error(gesture, points):
-    n = len(points)
-    return sum(min(sqr_min_dist(i, (points[x-1], points[x])) for x in range(1, n)) for i in gesture)
+    """Returns the sum of the sqr_min_dist of each point in gesture to some line
+    in points added to the sqr_min_dist of each point in points to some line in
+    gestures
+
+    :param list gesture: The gesture's way points
+    :param list points: The points of the finger
+    """
+    np = len(points)
+    ng = len(gesture)
+    err = sum(min(sqr_min_dist(i, (points[x-1], points[x])) for x in range(1, np)) for i in gesture)
+    err += sum(min(sqr_min_dist(i, (gesture[x-1], gesture[x])) for x in range(1, ng)) for i in points)
+    return err
 
 def resize(gesture, points, min_size):
     """Returns the ratio to multiply the points by, and the x, y shift to shift
     them by.
-
+    
     :param list gesture: The gesture to resize the points to
     :param list points: The points (of the fingers) to resize
     :param tuple min_size: The minimum size for the points. Anything smaller
@@ -66,7 +76,7 @@ def resize(gesture, points, min_size):
 
     return (ratio, x_shift, y_shift)
 
-THRESHOLD = 0.01
+THRESHOLD = 0.2
 
 def match(gestures, points):
     """Finds matches to gestures in points. Algorithm -
@@ -81,14 +91,15 @@ def match(gestures, points):
     :param list gestures: a list of gesturesto compare to the points
     :param list points: The list of positions of the hand
     """
-    for n in range(len(points) - 2):
-        t_points = points[n:]
-        for index in range(len(gestures)):
-            min_size, gesture = gestures[index]
+    for index in range(len(gestures)):
+        min_size, gesture = gestures[index]
+        sgn_g_x = cmp(gesture[-1][0] - gesture[0][0], 0)
+        sgn_g_y = cmp(gesture[-1][1] - gesture[0][1], 0)
+        min_err = None
+        for n in range(len(points) - 2):
+            t_points = points[n:]
             ratio, x_shift, y_shift = resize(gesture, t_points, min_size)
             
-            sgn_g_x = cmp(gesture[-1][0] - gesture[0][0], 0)
-            sgn_g_y = cmp(gesture[-1][1] - gesture[0][1], 0)
             sgn_p_x = cmp(points[-1][0] - points[0][0], 0)
             sgn_p_y = -cmp(points[-1][1] - points[0][1], 0)
             if sgn_g_x != 0 and sgn_p_x != 0 and sgn_g_x != sgn_p_x: continue
@@ -99,9 +110,14 @@ def match(gestures, points):
             r_points = [(ratio*i[0], ratio*i[1]) for i in t_points]
             r_points = [(i[0] - x_shift, i[1] - y_shift) for i in r_points]
             err = error(gesture, r_points)
-            if err <= THRESHOLD:
-                print "Error for gesture", index, "=", err
-                return index
+            if min_err == None:
+                min_err = err
+            else:
+                min_err = min(err, min_err)
+        print(min_err)
+        if min_err <= THRESHOLD:
+            print "Error for gesture", index, "=", min_err
+            return index
     return None
 
 sample_points = ((223, 189), (223, 187), (223, 184), (223, 182), (223, 179), (222, 176), (222, 173), (221, 170), (221, 167), (220, 164), (220, 161), (219, 158), (218, 155), (217, 151), (217, 148), (216, 145), (216, 142), (215, 138), (215, 135), (216, 132), (216, 129), (215, 125), (215, 122), (216, 120), (216, 117), (217, 113), (217, 110), (217, 107), (216, 103), (216, 99), (214, 95), (213, 92), (212, 89), (211, 87), (210, 87), (210, 89))
