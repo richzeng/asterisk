@@ -75,7 +75,7 @@ class FingerTracker(object):
         cv.Threshold(threshold_total, threshold_total, 100, 255, cv.CV_THRESH_BINARY)
         return threshold_total
 
-    def connectedcomps(self, img, cutoff=0.2):
+    def connectedcomps(self, img, cutoff=0.1):
         """Finds connected components in image
 
         :param img: A CV image to search for connected components
@@ -116,7 +116,7 @@ class FingerTracker(object):
             # Only add if there are two tracked positions, anything else may be an error
             return
         # Ensure that the positions aren't too far away (ie one of the positions might be noise)
-        if sqrt((positions[0][0]-positions[1][0])**2 + (positions[0][1]-positions[1][1])**2) < 300:
+        if sqrt((positions[0][0]-positions[1][0])**2 + (positions[0][1]-positions[1][1])**2) < 350:
             if positions[0][0] < positions[1][0]:
                 ti.add_positions( positions)
             else:
@@ -134,7 +134,7 @@ class FingerTracker(object):
             cv.ShowImage("Image", img)
 
             img = self.filter2(img)
-            c = self.connectedcomps(img,0.2)
+            c = self.connectedcomps(img)
             self.add_two_positions(ti, c)
             cv.ShowImage("Output", img)
         self.destroy()
