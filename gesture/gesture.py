@@ -1,8 +1,14 @@
 class Gesture():
-    def __init__(self, name, waypoints, min_size = (0, 0), command = None, delay = 0.25):
+    def __init__(self, name, waypoints, min_sizes = None, command = None, delay = 0.25):
         self.name = name
         self.waypoints = waypoints
-        self.min_size = min_size
+        self.finger_num = len(waypoints)
+        if min_sizes != None:
+            self.min_sizes = min_sizes
+            if len(min_sizes) != self.finger_num:
+                print "Warning: Invalid min_sizes. Continuing anyway."
+        else:
+            self.min_sizes = [(0, 0) for i in range(self.finger_num)]
         if command != None:
             self.command = command
         else:
@@ -96,38 +102,48 @@ def match(gestures, points):
     :param list gestures: a list of gesturesto compare to the points
     :param list points: The list of positions of the hand
     """
-    p_max_y, p_min_y = max(i[1] for i in points), min(i[1] for i in points)
+    finger_count = len(points[0])
     gesture_errors = []
     for index in range(len(gestures)):
-        min_size = gestures[index].min_size
-        waypoints = gestures[index].waypoints
-        sgn_g_x = cmp(waypoints[-1][0] - waypoints[0][0], 0)
-        sgn_g_y = cmp(waypoints[-1][1] - waypoints[0][1], 0)
-        min_err = None
-        for n in range(len(points) - 2):
-            t_points = points[n:]
-            ratio, x_shift, y_shift = resize(waypoints, t_points, min_size)
-            
-            sgn_p_x = cmp(points[-1][0] - points[0][0], 0)
-            sgn_p_y = -cmp(points[-1][1] - points[0][1], 0)
-            if sgn_g_x != 0 and sgn_p_x != 0 and sgn_g_x != sgn_p_x: continue
-            if sgn_g_y != 0 and sgn_p_y != 0 and sgn_g_y != sgn_p_y: continue
-            
-            if ratio == None: continue
-            if ratio <= 0: continue
-            r_points = [(ratio*i[0], ratio*i[1]) for i in t_points]
-            r_points = [(i[0] - x_shift, i[1] - y_shift) for i in r_points]
-            err = error(waypoints, r_points)
-            if min_err == None:
-                min_err = err
-            else:
-                min_err = min(err, min_err)
-        gesture_errors.append(min_err)
+        gesture = gestures[index]
+        if gesture.finger_num != finger_count:
+            print(finger_count, gesture.finger_num)
+            continue
+        gesture_err = 0
+        for n in xrange(finger_count):
+            waypoints = gesture.waypoints[n]
+            min_size = gesture.min_sizes[n]
+            sgn_g_x = cmp(waypoints[-1][0] - waypoints[0][0], 0)
+            sgn_g_y = cmp(waypoints[-1][1] - waypoints[0][1], 0)
+            min_err = None
+            for s in range(len(points) - 2):
+                t_points = [p[n] for p in points[s:]]
+                ratio, x_shift, y_shift = resize(waypoints, t_points, min_size)
+                
+                sgn_p_x = cmp(t_points[-1][0] - t_points[0][0], 0)
+                sgn_p_y = -cmp(t_points[-1][1] - t_points[0][1], 0)
+                if sgn_g_x != 0 and sgn_p_x != 0 and sgn_g_x != sgn_p_x: continue
+                if sgn_g_y != 0 and sgn_p_y != 0 and sgn_g_y != sgn_p_y: continue
+                
+                if ratio == None: continue
+                if ratio <= 0: continue
+                r_points = [(ratio*i[0], ratio*i[1]) for i in t_points]
+                r_points = [(i[0] - x_shift, i[1] - y_shift) for i in r_points]
+                err = error(waypoints, r_points)
+                if min_err == None:
+                    min_err = err
+                else:
+                    min_err = min(err, min_err)
+            gesture_err += min_err
+        gesture_errors.append(gesture_err * 1.0 / finger_count)
+    if len(gesture_errors) == 0:
+        return None
     min_err = min(e for e in gesture_errors)
     if min_err == None or min_err > THRESHOLD:
         return None
     index = gesture_errors.index(min_err)
     return index
 
-sample_points = ((223, 189), (223, 187), (223, 184), (223, 182), (223, 179), (222, 176), (222, 173), (221, 170), (221, 167), (220, 164), (220, 161), (219, 158), (218, 155), (217, 151), (217, 148), (216, 145), (216, 142), (215, 138), (215, 135), (216, 132), (216, 129), (215, 125), (215, 122), (216, 120), (216, 117), (217, 113), (217, 110), (217, 107), (216, 103), (216, 99), (214, 95), (213, 92), (212, 89), (211, 87), (210, 87), (210, 89))
-gestures = (Gesture("Up swipe", ((0, 0), (0, 1)), (0, 50)),)
+sample_points = [[(223, 189)], [(223, 187)], [(223, 184)], [(223, 182)], [(223, 179)], [(222, 176)], [(222, 173)], [(221, 170)], [(221, 167)], [(220, 164)], [(220, 161)], [(219, 158)], [(218, 155)], [(217, 151)], [(217, 148)], [(216, 145)], [(216, 142)], [(215, 138)], [(215, 135)], [(216, 132)], [(216, 129)], [(215, 125)], [(215, 122)], [(216, 120)], [(216, 117)], [(217, 113)], [(217, 110)], [(217, 107)], [(216, 103)], [(216, 99)], [(214, 95)], [(213, 92)], [(212, 89)], [(211, 87)], [(210, 87)], [(210, 89)]]
+up_swipe = Gesture("Up swipe", [[(0, 0), (0, 1)]], [(0, 50)])
+gestures = [up_swipe]
