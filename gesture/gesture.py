@@ -1,3 +1,13 @@
+def make_gesture(min_size, way_points):
+    """Returns a gesture with minimum allowed size min_size and way points
+    way_points
+
+    :param tuple min_size: (min_size_x, min_size_y), if the points are smaller
+    than this it breaks
+    :param list way_points: a list of way points for the gesture
+    """
+    return (min_size, way_points)
+
 def sqr_min_dist(point, line):
     """Returns the square of the minimum of the distance from point, 'point,'
     to the line segment, 'line'
@@ -80,4 +90,4 @@ def match(gestures, points):
     return None
 
 sample_points = ((223, 189), (223, 187), (223, 184), (223, 182), (223, 179), (222, 176), (222, 173), (221, 170), (221, 167), (220, 164), (220, 161), (219, 158), (218, 155), (217, 151), (217, 148), (216, 145), (216, 142), (215, 138), (215, 135), (216, 132), (216, 129), (215, 125), (215, 122), (216, 120), (216, 117), (217, 113), (217, 110), (217, 107), (216, 103), (216, 99), (214, 95), (213, 92), (212, 89), (211, 87), (210, 87), (210, 89))
-gestures = (((0, 50), ((0, 0), (0, 1))),)
+gestures = (make_gesture((0, 50), ((0, 0), (0, 1))),)
