@@ -107,7 +107,6 @@ def match(gestures, points):
     for index in range(len(gestures)):
         gesture = gestures[index]
         if gesture.finger_num != finger_count:
-            print(finger_count, gesture.finger_num)
             continue
         gesture_err = 0
         for n in xrange(finger_count):
@@ -144,6 +143,15 @@ def match(gestures, points):
     index = gesture_errors.index(min_err)
     return gestures[index]
 
+def make_default_gesture(name, count, end, default_size):
+    return Gesture(name, [[(0, 0), end] for i in range(count)], [default_size for i in range(count)])
+
 sample_points = [[(223, 189)], [(223, 187)], [(223, 184)], [(223, 182)], [(223, 179)], [(222, 176)], [(222, 173)], [(221, 170)], [(221, 167)], [(220, 164)], [(220, 161)], [(219, 158)], [(218, 155)], [(217, 151)], [(217, 148)], [(216, 145)], [(216, 142)], [(215, 138)], [(215, 135)], [(216, 132)], [(216, 129)], [(215, 125)], [(215, 122)], [(216, 120)], [(216, 117)], [(217, 113)], [(217, 110)], [(217, 107)], [(216, 103)], [(216, 99)], [(214, 95)], [(213, 92)], [(212, 89)], [(211, 87)], [(210, 87)], [(210, 89)]]
-up_swipe = Gesture("Up swipe", [[(0, 0), (0, 1)]], [(0, 50)])
-gestures = [up_swipe]
+one_up = Gesture("One Up", [[(0, 0), (0, 1)]], [(0, 50)])
+two_left = make_default_gesture("Two Left", 2, (-1, 0), (50, 0))
+two_right = make_default_gesture("Two Right", 2, (1, 0), (50, 0))
+two_up = make_default_gesture("Two Up", 2, (0, 1), (0, 50))
+two_down = make_default_gesture("Two Down", 2, (0, -1), (0, 50))
+two_together = Gesture("Two Together", [[(0, 0), (1, 0)], [(0, 0), (-1, 0)]], [(50, 0), (50, 0)])
+two_away = Gesture("Two Away", [[(0, 0), (-1, 0)], [(0, 0), (1, 0)]], [(50, 0), (50, 0)])
+gestures = [one_up, two_left, two_right, two_up, two_down, two_together, two_away]
