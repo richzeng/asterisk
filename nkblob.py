@@ -27,6 +27,7 @@ class BlobTracker:
             cv.CvtColor(img, img, cv.CV_HSV2BGR)
             cv.ShowImage("Hue", threshold_h)
             cv.ShowImage("Image", img)
+        self.destroy()
 
     def run2(self):
         while cv.WaitKey(10) != 27:
@@ -51,6 +52,14 @@ class BlobTracker:
             cv.ShowImage("Filtered", threshold_total)
             cv.ShowImage("Image", img)
             #cv.ShowImage(window_rgb, img)
+        self.destroy()
+    
+    def destroy(self):
+        cv.DestroyWindow("Hue")
+        cv.DestroyWindow("Saturation")
+        cv.DestroyWindow("Filtered")
+        cv.DestroyWindow("Image")
+        del self.capture
 
 if __name__=="__main__":
     color_tracker = BlobTracker()
