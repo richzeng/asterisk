@@ -51,7 +51,7 @@ class TrackerOut(list):
         start_index = i
         if self[start_index][1] < start_time:
             start_index += 1
-        print "Indices {}.{}".format(start_index, end_index)
+
         if start_index == len(self):
             return []
         else:
