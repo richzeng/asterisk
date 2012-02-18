@@ -113,14 +113,18 @@ def compare(gesture, points):
             if ratio <= 0: continue
             r_points = [(ratio*i[0], ratio*i[1]) for i in t_points]
             r_points = [(i[0] - x_shift, i[1] - y_shift) for i in r_points]
-            #if index == 5: print(r_points)
             err = error(waypoints, r_points)
+            #if s == 0: print(r_points, n, waypoints, err, gesture.name)
             if min_err == None:
                 min_err = err
             else:
                 min_err = min(err, min_err)
-        if gesture_err == None: gesture_err = min_err
-        elif min_err != None: gesture_err += min_err
+        if min_err == None:
+            return None
+        if gesture_err == None:
+            gesture_err = min_err
+        else:
+            gesture_err += min_err
     if gesture_err != None:
         return gesture_err * 1.0 / finger_count
     else:
