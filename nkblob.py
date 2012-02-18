@@ -9,6 +9,13 @@ class BlobTracker:
         cv.NamedWindow("Postprocessed",1)
         cv.NamedWindow("Test",1)
         self.capture = cv.CaptureFromCAM(0)
+        self.g_low = 75
+        self.g_hi = 150
+        self.h_low = 55
+        self.h_hi = 95
+        self.s_low = 35
+        self.s_hi = 255
+
 
     def run(self):
         while cv.WaitKey(10) != 27:
@@ -43,7 +50,7 @@ class BlobTracker:
 
             cv.Smooth(g, g, cv.CV_BLUR, 4)
             threshold_g = cv.CreateImage(cv.GetSize(img), 8, 1)
-            cv.InRangeS(g, 75, 150, threshold_g)
+            cv.InRangeS(g, self.g_low, self.g_hi, threshold_g)
 
             cv.CvtColor(img, img, cv.CV_BGR2HSV)
             h = cv.CreateImage(cv.GetSize(img), 8, 1)
@@ -56,8 +63,8 @@ class BlobTracker:
 
 
             threshold_total = cv.CreateImage(cv.GetSize(img), 8, 1)
-            cv.InRangeS(h, 55, 95, threshold_h)
-            cv.InRangeS(s, 35, 255, threshold_s)
+            cv.InRangeS(h, self.h_low, self.h_hi, threshold_h)
+            cv.InRangeS(s, self.s_low, self.s_hi, threshold_s)
             cv.And(threshold_h, threshold_s, threshold_total)
             cv.And(threshold_total, threshold_g, threshold_total)
             cv.ShowImage("Filtered", threshold_total)
@@ -96,7 +103,7 @@ class BlobTracker:
 
             cv.ShowImage("Postprocessed", r)
 
-            cv.ShowImage("Test", threshold_g)
+            cv.ShowImage("Test", threshold_g) #g, h, or s
         self.destroy()
 
     def destroy(self):
