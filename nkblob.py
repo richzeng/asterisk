@@ -46,6 +46,18 @@ class BlobTracker:
             #cv.Merge(threshold_h, s, v, None, img)
             #cv.CvtColor(img, img, cv.CV_HSV2BGR)
             #cv.ShowImage(window_hue, threshold_h)
+
+            #EDITS BY RICHIE
+            mem = cv.CreateMemStorage()
+            contours = cv.FindContours(threshold_total,mem)
+            moments = cv.Moments(contours, 0)
+            area = cv.GetCentralMoment(moments, 0, 0)
+            if area > 10:
+                x = cv.GetSpatialMoment(moments, 1, 0)/area
+                y = cv.GetSpatialMoment(moments, 0, 1)/area
+                print('x:{0} y{1} area:{2}'.format(x,y,area))
+            #END OF EDITS BY RICHIE
+
             cv.ShowImage("Hue", threshold_h)
             cv.ShowImage("Saturation", threshold_s)
             cv.ShowImage("Filtered", threshold_total)
