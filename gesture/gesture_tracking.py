@@ -1,5 +1,6 @@
 import gesture
 from cv2 import cv
+from time import sleep
 
 import sys, os
 sys.path.insert(0, os.path.abspath('..'))
@@ -45,7 +46,7 @@ def trackobject(img, frame, ti):
                               WINDOW_WIDTH, WINDOW_HEIGHT))
         object_x0 = rect[0]
         object_y0 = rect[1]
-        
+        print object_x0, object_y0
         ti.add_positions( [[object_x0, object_y0]] + [ [0,0] for x in xrange(9) ] )
         
         cv.Rectangle(frame, (object_x0, object_y0),
@@ -89,7 +90,7 @@ def tracking_producer(ti):
     WINDOW_WIDTH = 24 # search window width
     WINDOW_HEIGHT = 24 # search window height
     THRESHOLD = 0.2
-    MAX_POINTS = 50
+    MAX_POINTS = 30
 
     frame = cv.QueryFrame(camcapture)
 
@@ -133,7 +134,7 @@ def tracking_consumer(to):
         to.flush()
         if len(to) > MAX_POINTS:
             del to[:-MAX_POINTS]
-        if len(to) == MAX_POINTS:
+        if len(to) > 2:
             if most_recent != to[-1][1]:
                 most_recent = to[-1][1]
                 g = gesture.match(gesture.gestures, map(lambda x: x[0][0], to))
