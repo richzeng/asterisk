@@ -11,3 +11,9 @@ def move_right():
 
 def move_left():
     os.system("./crikey '\C\S\t'")
+
+def move_together():
+    os.system("./crikey '\C-\C-\C-'")
+
+def move_away():
+    os.system("./crikey '\C=\C=\C='")
