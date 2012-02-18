@@ -31,11 +31,26 @@ class TrackerOut(list):
 
     def time_slice(self, start_time, end_time = None):
         """Returns a list of the finger positions between a given starting time and ending time
-        NOT YET IMPLEMENTED
 
         :param float start_time: A Unix timestamp of the starting time
         :param float end_time: A Unix timestamp of the ending time (default NOW)
         """
-        pass
+        if end_time is None:
+            end_time = self[-1][1]
+        i = len(self) - 1
+        while 0 < i and end_time < self[i][1]:
+            i -= 1
 
+        end_index = i + 1
 
+        while 0 < i and start_time < self[i][1]:
+            i -= 1
+
+        start_index = i
+        if self[start_index][1] < start_time:
+            start_index += 1
+        print "Indices {}.{}".format(start_index, end_index)
+        if start_index == len(self):
+            return []
+        else:
+            return self[start_index:end_index]
