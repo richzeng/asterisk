@@ -108,7 +108,7 @@ def match(gestures, points):
         gesture = gestures[index]
         if gesture.finger_num != finger_count:
             continue
-        gesture_err = 0
+        gesture_err = None
         for n in xrange(finger_count):
             waypoints = gesture.waypoints[n]
             min_size = gesture.min_sizes[n]
@@ -133,11 +133,15 @@ def match(gestures, points):
                     min_err = err
                 else:
                     min_err = min(err, min_err)
-            if min_err != None: gesture_err += min_err
-        gesture_errors.append(gesture_err * 1.0 / finger_count)
-    if len(gesture_errors) == 0:
+            if gesture_err == None: gesture_err = min_err
+            elif min_err != None: gesture_err += min_err
+        if gesture_err != None:
+            gesture_errors.append(gesture_err * 1.0 / finger_count)
+        else:
+            gesture_err.append(None)
+    if len(gesture_errors) == 0 or all(e == None for e in gesture_errors):
         return None
-    min_err = min(e for e in gesture_errors)
+    min_err = min(e for e in gesture_errors if e != None)
     if min_err == None or min_err > THRESHOLD:
         return None
     index = gesture_errors.index(min_err)
