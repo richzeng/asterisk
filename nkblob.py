@@ -84,6 +84,7 @@ class BlobTracker:
 
             do_box = True
             if do_box:
+                cv.Canny(threshold_total, threshold_total, 25, 75)
                 storage = cv.CreateMemStorage(0)
                 obj = cv.FindContours(threshold_total, storage, cv.CV_RETR_CCOMP, cv.CV_CHAIN_APPROX_SIMPLE)
                 box = cv.BoundingRect(obj)
