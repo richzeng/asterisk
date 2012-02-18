@@ -2,6 +2,18 @@ import cv2
 from cv2 import cv
 import numpy
 from time import time
+import win32api, win32con
+def changemousepos(x,y):
+    win32api.SetCursorPos((x,y))
+def clickdown(x, y):
+    changemousepos(x,y)
+    win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN,x,y,0,0)
+def clickup(x, y):
+    changemousepos(x,y)
+    win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP,x,y,0,0)
+
+
+
 def connectedcomps(img, cutoff):
     rows, columns = cv.GetSize(img)
     rowcutoff, colcutoff = int(rows*cutoff), int(columns*cutoff)
@@ -13,11 +25,12 @@ def connectedcomps(img, cutoff):
             return cv.FloodFill(imgc, (x, y), 255, 0, 0)
         else: return (0, 0, 0)
     complist = list(getconnectedcomp(x, y) for x in range(rowcutoff, rows-rowcutoff, 20) for y in range(colcutoff,columns-colcutoff,20))
-    complist = sorted(filter(lambda comp: comp[0] > 700, complist), key = lambda comp: comp[0])
+    complist = set(sorted(filter(lambda comp: comp[0] > 700, complist), key = lambda comp: comp[0]))
     for comp in complist:
         x, y, width, height = comp[-1]
         x1, x2, y1, y2 = x, x + width, y, y + height
         cv.Rectangle(img, (x1, y1), (x2, y2), (255, 0, 0))
+    return complist
     
 
 #Get rectangle enclosing list of Connected Components
@@ -87,12 +100,13 @@ class BlobTracker:
             cv.Threshold(h, threshold_h, 15, 255, cv.CV_THRESH_BINARY)
             cv.Merge(threshold_h, s, v, None, img)
             cv.CvtColor(img, img, cv.CV_HSV2BGR)
-            cv.ShowImage("Hue", threshold_h)
-            cv.ShowImage("Image", img)
+            #cv.ShowImage("Hue", threshold_h)
+            #cv.ShowImage("Image", img)
         self.destroy()
 
     def run2(self):
         pastcomps = []
+        mouse_down = False
         while cv.WaitKey(10) != 27:
             img = cv.QueryFrame(self.capture)
             cv.Flip(img,img,1)
@@ -122,13 +136,57 @@ class BlobTracker:
             cv.InRangeS(s, 50, 255, threshold_s)
             cv.And(threshold_h, threshold_s, threshold_total)
             cv.And(threshold_total, threshold_g, threshold_total)
-            cv.ShowImage("Filtered", threshold_total)
+            #cv.ShowImage("Filtered", threshold_total)
 
             cv.Smooth(threshold_total, threshold_total, cv.CV_BLUR, 11)
             cv.Threshold(threshold_total, threshold_total, 100, 255, cv.CV_THRESH_BINARY)
             t = time()
-            #connectedcomps(threshold_total, 0.20)
-            pastcomps = connectedcomps2(threshold_total, 0.20, pastcomps)
+            comps = connectedcomps(threshold_total, 0.10)
+            '''
+            if(len(comps)<=1):
+                comps = list(comps)
+                if(len(comps)==1): x1, y1, width1, height1 = comps[0][-1]
+                #x2, y2, width2, height2 = comps[1][-1]
+                #x1, x2 = int(x1*(1360/700.)), int(x2*(1360/700.))
+                #y1, y2 = int(y1*(768/520.)), int(y1*(768/520.))
+                #x1, y1 = x1 + width1//2, y1 + height1//2
+                #x2, y2 = x2 + width2//2, y2 + height2//2
+                #print((x1-x2)**2 + (y1-y2)**2, x1, y1, x2, y2)
+                if(len(comps)==0):
+                    if(not mouse_down):
+                        mouse_down = True
+                        clickdown(x1, y1)
+                    elif(mouse_down):
+                        changemousepos(x1, y1)
+                elif(mouse_down):
+                    mouse_down = False
+                    clickup(x1, y1)
+                else:
+                    changemousepos(x1, y1)
+            '''
+            if(len(comps)==2):
+                comps = list(comps)
+                x1, y1, width1, height1 = comps[0][-1]
+                x2, y2, width2, height2 = comps[1][-1]
+                x1, y1 = x1 + width1//2, y1 + height1//2
+                x2, y2 = x2 + width2//2, y2 + height2//2
+                x1, x2 = int(x1*(1360/650.)), int(x2*(1360/650.))
+                y1, y2 = int(y1*(768/480.)), int(y2*(768/480.))
+                
+                #print((x1-x2)**2 + (y1-y2)**2, x1, y1, x2, y2)
+                if((x1-x2)**2 + (y1-y2)**2 < 12000):
+                    if(not mouse_down):
+                        mouse_down = True
+                        clickdown((x1+x2)//2, (y1 + y2)//2)
+                    elif(mouse_down):
+                        changemousepos((x1+x2)//2, (y1+y2)//2)
+                elif(mouse_down):
+                    mouse_down = False
+                    clickup((x1+x2)//2, (y1 + y2)//2)
+                else:
+                    changemousepos((x1+x2)//2, (y1+y2)//2)
+            
+            #pastcomps = connectedcomps2(threshold_total, 0.20, pastcomps)
             #print(time() - t)
             cv.ShowImage("Threshold", threshold_total)
 
