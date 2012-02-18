@@ -18,9 +18,11 @@ class TrackerOut(list):
         """Reads the most recent data from the tracker input
         """
         try:
-            for x in xrange(5):
+            for x in xrange(100):
                 pos = self.q.get_nowait()
                 self.append(pos)
+            else:
+                print "WARNING: did not flush fully"
         except Empty:
             pass
 
