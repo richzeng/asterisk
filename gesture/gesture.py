@@ -1,12 +1,17 @@
-def make_gesture(min_size, way_points):
-    """Returns a gesture with minimum allowed size min_size and way points
-    way_points
-
-    :param tuple min_size: (min_size_x, min_size_y), if the points are smaller
-    than this it breaks
-    :param list way_points: a list of way points for the gesture
-    """
-    return (min_size, way_points)
+class Gesture():
+    def __init__(self, name, waypoints, min_size = (0, 0), command = None, delay = 0.25):
+        self.name = name
+        self.waypoints = waypoints
+        self.min_size = min_size
+        if command != None:
+            self.command = command
+        else:
+            def print_name():
+                print name
+            command = print_name
+        self.delay = delay
+    def execute(self):
+        command()
 
 def sqr_min_dist(point, line):
     """Returns the square of the minimum of the distance from point, 'point,'
@@ -31,7 +36,7 @@ def error(gesture, points):
     in points added to the sqr_min_dist of each point in points to some line in
     gestures
 
-    :param list gesture: The gesture's way points
+    :param list gesture: The gesture's waypoints
     :param list points: The points of the finger
     """
     np = len(points)
@@ -44,7 +49,7 @@ def resize(gesture, points, min_size):
     """Returns the ratio to multiply the points by, and the x, y shift to shift
     them by.
     
-    :param list gesture: The gesture to resize the points to
+    :param list gesture: The waypoints of the gesture to resize the points to
     :param list points: The points (of the fingers) to resize
     :param tuple min_size: The minimum size for the points. Anything smaller
     will cause the function to return (None, None, None)
@@ -94,13 +99,14 @@ def match(gestures, points):
     p_max_y, p_min_y = max(i[1] for i in points), min(i[1] for i in points)
     gesture_errors = []
     for index in range(len(gestures)):
-        min_size, gesture = gestures[index]
-        sgn_g_x = cmp(gesture[-1][0] - gesture[0][0], 0)
-        sgn_g_y = cmp(gesture[-1][1] - gesture[0][1], 0)
+        min_size = gestures[index].min_size
+        waypoints = gestures[index].waypoints
+        sgn_g_x = cmp(waypoints[-1][0] - waypoints[0][0], 0)
+        sgn_g_y = cmp(waypoints[-1][1] - waypoints[0][1], 0)
         min_err = None
         for n in range(len(points) - 2):
             t_points = points[n:]
-            ratio, x_shift, y_shift = resize(gesture, t_points, min_size)
+            ratio, x_shift, y_shift = resize(waypoints, t_points, min_size)
             
             sgn_p_x = cmp(points[-1][0] - points[0][0], 0)
             sgn_p_y = -cmp(points[-1][1] - points[0][1], 0)
@@ -111,7 +117,7 @@ def match(gestures, points):
             if ratio <= 0: continue
             r_points = [(ratio*i[0], ratio*i[1]) for i in t_points]
             r_points = [(i[0] - x_shift, i[1] - y_shift) for i in r_points]
-            err = error(gesture, r_points)
+            err = error(waypoints, r_points)
             if min_err == None:
                 min_err = err
             else:
@@ -125,4 +131,4 @@ def match(gestures, points):
     return index
 
 sample_points = ((223, 189), (223, 187), (223, 184), (223, 182), (223, 179), (222, 176), (222, 173), (221, 170), (221, 167), (220, 164), (220, 161), (219, 158), (218, 155), (217, 151), (217, 148), (216, 145), (216, 142), (215, 138), (215, 135), (216, 132), (216, 129), (215, 125), (215, 122), (216, 120), (216, 117), (217, 113), (217, 110), (217, 107), (216, 103), (216, 99), (214, 95), (213, 92), (212, 89), (211, 87), (210, 87), (210, 89))
-gestures = (make_gesture((0, 50), ((0, 0), (0, 1))),)
+gestures = (Gesture("Up swipe", ((0, 0), (0, 1)), (0, 50)),)
