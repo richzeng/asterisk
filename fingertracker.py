@@ -2,6 +2,7 @@ import cv2
 from cv2 import cv
 import numpy
 from tracking import TrackerIn, util
+from math import sqrt
 
 class FingerTracker(object):
     """Finger tracking class
@@ -38,7 +39,7 @@ class FingerTracker(object):
 
         return threshold_total
 
-    def filter2(self, img, g_low=75, g_hi=150, h_low=55, h_hi=95, s_low=35, s_hi=255):
+    def filter2(self, img, g_low=75, g_hi=150, h_low=55, h_hi=95, s_low=50, s_hi=255):
         """Run filter method 2 on an image, returing a black-and-white version of it
 
         :param img: Input image (RGB)
@@ -74,13 +75,14 @@ class FingerTracker(object):
         cv.Threshold(threshold_total, threshold_total, 100, 255, cv.CV_THRESH_BINARY)
         return threshold_total
 
-    def connectedcomps(self, img):
+    def connectedcomps(self, img, cutoff=0.2):
         """Finds connected components in image
 
         :param img: A CV image to search for connected components
         :return: A list of coordinate pairs where there are points
         """
         rows, columns = cv.GetSize(img)
+        rowcutoff, colcutoff = int(rows*cutoff), int(columns*cutoff)
         imgc = cv.CreateImage(cv.GetSize(img), 8, 1)
         cv.Copy(img, imgc)
         def getconnectedcomp(x, y):
@@ -89,14 +91,12 @@ class FingerTracker(object):
                 return cv.FloodFill(imgc, (x, y), 125, 0, 0)
             else:
                 return (0, 0, 0)
-        complist = list(getconnectedcomp(x, y) for x in range(0, rows-10, 20) for y in range(0,columns-10,20))
-        complist = sorted(filter(lambda comp: comp[0] > 0, complist), key = lambda comp: comp[0])
+        complist = list(getconnectedcomp(x, y) for x in range(rowcutoff, rows-rowcutoff, 20) for y in range(colcutoff,columns-colcutoff,20))
+        complist = sorted(filter(lambda comp: comp[0] > 100, complist), key = lambda comp: comp[0])
 
         ret = []
         for comp in complist:
             area = comp[0]
-            if area < 400 or area > 6000:
-                continue
             x, y, width, height = comp[-1]
             if float(abs(width-height))/min(width,height) > 0.25:
                 continue
@@ -115,11 +115,13 @@ class FingerTracker(object):
         if len(positions) != 2:
             # Only add if there are two tracked positions, anything else may be an error
             return
+        # Ensure that the positions aren't too far away (ie one of the positions might be noise)
+        if sqrt((positions[0][0]-positions[1][0])**2 + (positions[0][1]-positions[1][1])**2) < 300:
+            if positions[0][0] < positions[1][0]:
+                ti.add_positions( positions)
+            else:
+                ti.add_positions( positions[::-1])
 
-        if positions[0][0] < positions[1][0]:
-            ti.add_positions( positions)
-        else:
-            ti.add_positions( positions[::-1])
 
     def run(self, ti):
         """Run the algorithm
@@ -132,7 +134,7 @@ class FingerTracker(object):
             cv.ShowImage("Image", img)
 
             img = self.filter2(img)
-            c = self.connectedcomps(img)
+            c = self.connectedcomps(img,0.2)
             self.add_two_positions(ti, c)
             cv.ShowImage("Output", img)
         self.destroy()
