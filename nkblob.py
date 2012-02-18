@@ -1,5 +1,21 @@
 import cv2
 from cv2 import cv
+import numpy
+def connectedcomps(img):
+    rows, columns = cv.GetSize(img)
+    imgc = cv.CreateImage(cv.GetSize(img), 8, 1)
+    cv.Copy(img, imgc)
+    def getconnectedcomp(x, y):
+        imgarr = numpy.asarray(cv.GetMat(imgc))
+        if(imgarr[y][x] == 255):
+            return cv.FloodFill(imgc, (x, y), 125, 0, 0)
+        else: return (0, 0, 0)
+    complist = list(getconnectedcomp(x, y) for x in range(0, rows-10, 20) for y in range(0,columns-10,20))
+    complist = sorted(filter(lambda comp: comp[0] > 0, complist), key = lambda comp: comp[0])
+    for comp in complist:
+        x, y, width, height = comp[-1]
+        x1, x2, y1, y2 = x, x + width, y, y + height
+        cv.Rectangle(img, (x1, y1), (x2, y2), (255, 0, 0))
 
 class BlobTracker:
     def __init__(self):
@@ -9,14 +25,13 @@ class BlobTracker:
         cv.NamedWindow("Postprocessed",1)
         cv.NamedWindow("Test",1)
         self.capture = cv.CaptureFromCAM(0)
+
         self.g_low = 75
         self.g_hi = 150
         self.h_low = 55
         self.h_hi = 95
         self.s_low = 35
         self.s_hi = 255
-
-
     def run(self):
         while cv.WaitKey(10) != 27:
             img = cv.QueryFrame(self.capture)
@@ -35,6 +50,25 @@ class BlobTracker:
             cv.CvtColor(img, img, cv.CV_HSV2BGR)
             cv.ShowImage("Hue", threshold_h)
             cv.ShowImage("Image", img)
+        self.destroy()
+
+    def run2a(self):
+        while cv.WaitKey(10) != 27:
+            img = cv.QueryFrame(self.capture)
+            cv.Flip(img,img,1)
+            cv.CvtColor(img, img, cv.CV_BGR2HSV)
+            h = cv.CreateImage(cv.GetSize(img), 8, 1)
+            s = cv.CreateImage(cv.GetSize(img), 8, 1)
+            v = cv.CreateImage(cv.GetSize(img), 8, 1)
+            cv.Split(img, h, s, v, None)
+            threshold_h = cv.CreateImage(cv.GetSize(img), 8, 1)
+            threshold_s = cv.CreateImage(cv.GetSize(img), 8, 1)
+            threshold_total = cv.CreateImage(cv.GetSize(img), 8, 1)
+            cv.Threshold(h, threshold_h, 65, 255, cv.CV_THRESH_BINARY)
+            cv.Threshold(s, threshold_s, 125, 255, cv.CV_THRESH_BINARY)
+            cv.And(threshold_h, threshold_s, threshold_total)
+            cv.ShowImage("Image", img)
+            cv.ShowImage("Filtered", threshold_total)
         self.destroy()
 
     def run2(self):
@@ -71,11 +105,12 @@ class BlobTracker:
 
             cv.Smooth(threshold_total, threshold_total, cv.CV_BLUR, 11)
             cv.Threshold(threshold_total, threshold_total, 100, 255, cv.CV_THRESH_BINARY)
+            connectedcomps(threshold_total) # FLOOD FILL
             cv.ShowImage("Threshold", threshold_total)
 
 
             r = cv.GetSubRect(threshold_total, (30, 30, img.width-30, img.height-30))
-            do_edges = True
+            do_edges = False
             if do_edges:
                 try:
                     mem = cv.CreateMemStorage()
@@ -101,9 +136,8 @@ class BlobTracker:
                 #print((box[0]+(box[2]/2), box[1]+(box[3]/2)))
                 cv.Rectangle(img, (box[0], box[1]), (box[0] + box[2], box[1] + box[3]),(255,0,0),1,8,0)
 
-            cv.ShowImage("Postprocessed", r)
-
-            cv.ShowImage("Test", threshold_g) #g, h, or s
+            #cv.ShowImage("Postprocessed", r)
+            #cv.ShowImage("Test", threshold_g)
         self.destroy()
 
     def destroy(self):
@@ -116,4 +150,4 @@ class BlobTracker:
 
 if __name__=="__main__":
     color_tracker = BlobTracker()
-    color_tracker.run2()
+    color_tracker.run2a()
