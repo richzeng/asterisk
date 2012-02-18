@@ -13,8 +13,9 @@ class FingerTracker(object):
 
         :param TrackerIn ti: Tracker input
         """
-        cv.NamedWindow("Image",1)
-        cv.NamedWindow("Output",1)
+        cv.NamedWindow("Camera",1)
+        #cv.NamedWindow("Image",1)
+        #cv.NamedWindow("Output",1)
         self.capture = cv.CaptureFromCAM(0)
 
     def filter1(self, img):
@@ -49,6 +50,7 @@ class FingerTracker(object):
         g = cv.CreateImage(cv.GetSize(img), 8, 1)
         b = cv.CreateImage(cv.GetSize(img), 8, 1)
         cv.Split(img, r, g, b, None)
+        cv.ShowImage("Camera", g)
 
         cv.Smooth(g, g, cv.CV_BLUR, 4)
         threshold_g = cv.CreateImage(cv.GetSize(img), 8, 1)
@@ -131,19 +133,20 @@ class FingerTracker(object):
         while cv.WaitKey(10) != 27:
             img = cv.QueryFrame(self.capture)
             cv.Flip(img,img,1)
-            cv.ShowImage("Image", img)
+            #cv.ShowImage("Image", img)
 
             img = self.filter2(img)
             c = self.connectedcomps(img)
             self.add_two_positions(ti, c)
-            cv.ShowImage("Output", img)
+            #cv.ShowImage("Output", img)
         self.destroy()
 
     def destroy(self):
         """Close all windows and clean up
         """
-        cv.DestroyWindow("Image")
-        cv.DestroyWindow("Output")
+        cv.DestroyWindow("Camera")
+        #cv.DestroyWindow("Image")
+        #cv.DestroyWindow("Output")
         del self.capture
 
 
