@@ -91,6 +91,7 @@ def match(gestures, points):
     :param list gestures: a list of gesturesto compare to the points
     :param list points: The list of positions of the hand
     """
+    p_max_y, p_min_y = max(i[1] for i in points), min(i[1] for i in points)
     gesture_errors = []
     for index in range(len(gestures)):
         min_size, gesture = gestures[index]
