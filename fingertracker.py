@@ -137,6 +137,12 @@ class FingerTracker(object):
             cv.ShowImage("Output", img)
         self.destroy()
 
+    def run_to_file(self, filename):
+        def run(ti):
+            self.run(ti)
+        util.produce_to_file(run, filename)
+
+
     def destroy(self):
         """Close all windows and clean up
         """
