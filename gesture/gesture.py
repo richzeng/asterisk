@@ -161,6 +161,29 @@ def match(gestures, points):
 def make_default_gesture(name, count, end, default_size, command=None):
     return Gesture(name, [[(0, 0), end] for i in range(count)], [default_size for i in range(count)], command)
 
+def gesture_consumer(to):
+    MAX_POINTS = 150
+    most_recent = 0
+    initial_time = 0
+    while True:
+        to.flush()
+        if len(to) > MAX_POINTS:
+            del to[:-MAX_POINTS]
+        if len(to) > 2:
+            if most_recent != to[-1][1]:
+                most_recent = to[-1][1]
+                points = to.time_slice(initial_time)
+                if points == []:
+                    continue
+                g = match(gestures, map(lambda x: x[0], points))
+                if g != None:
+                    initial_time=to[-1][1] + g.delay
+                    if g.delay != 0:
+                        to.clear()
+                    g.execute()
+                else:
+                    print "No gesture found"
+
 sample_points = [[(223, 189)], [(223, 187)], [(223, 184)], [(223, 182)], [(223, 179)], [(222, 176)], [(222, 173)], [(221, 170)], [(221, 167)], [(220, 164)], [(220, 161)], [(219, 158)], [(218, 155)], [(217, 151)], [(217, 148)], [(216, 145)], [(216, 142)], [(215, 138)], [(215, 135)], [(216, 132)], [(216, 129)], [(215, 125)], [(215, 122)], [(216, 120)], [(216, 117)], [(217, 113)], [(217, 110)], [(217, 107)], [(216, 103)], [(216, 99)], [(214, 95)], [(213, 92)], [(212, 89)], [(211, 87)], [(210, 87)], [(210, 89)]]
 
 one_up = Gesture("One Up", [[(0, 0), (0, -1)]], [(0, 50)])
