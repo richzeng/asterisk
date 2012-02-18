@@ -1,6 +1,21 @@
 import cv2
 from cv2 import cv
-
+import numpy
+def connectedcomps(img):
+    rows, columns = cv.GetSize(img)
+    imgc = cv.CreateImage(cv.GetSize(img), 8, 1)
+    cv.Copy(img, imgc)
+    def getconnectedcomp(x, y):
+        imgarr = numpy.asarray(cv.GetMat(imgc))
+        if(imgarr[y][x] == 255):
+            return cv.FloodFill(imgc, (x, y), 125, 0, 0)
+        else: return (0, 0, 0)
+    complist = list(getconnectedcomp(x, y) for x in range(0, rows-10, 20) for y in range(0,columns-10,20))
+    complist = sorted(filter(lambda comp: comp[0] > 0, complist), key = lambda comp: comp[0])
+    for comp in complist:
+        x, y, width, height = comp[-1]
+        x1, x2, y1, y2 = x, x + width, y, y + height
+        cv.Rectangle(img, (x1, y1), (x2, y2), (255, 0, 0))
 class BlobTracker:
     def __init__(self):
         cv.NamedWindow("Image",1)
@@ -9,7 +24,7 @@ class BlobTracker:
         cv.NamedWindow("Postprocessed",1)
         cv.NamedWindow("Test",1)
         self.capture = cv.CaptureFromCAM(0)
-
+        
     def run(self):
         while cv.WaitKey(10) != 27:
             img = cv.QueryFrame(self.capture)
@@ -64,11 +79,12 @@ class BlobTracker:
 
             cv.Smooth(threshold_total, threshold_total, cv.CV_BLUR, 11)
             cv.Threshold(threshold_total, threshold_total, 100, 255, cv.CV_THRESH_BINARY)
+            connectedcomps(threshold_total)
             cv.ShowImage("Threshold", threshold_total)
 
 
             r = cv.GetSubRect(threshold_total, (30, 30, img.width-30, img.height-30))
-            do_edges = True
+            do_edges = False
             if do_edges:
                 try:
                     mem = cv.CreateMemStorage()
@@ -94,9 +110,9 @@ class BlobTracker:
                 #print((box[0]+(box[2]/2), box[1]+(box[3]/2)))
                 cv.Rectangle(img, (box[0], box[1]), (box[0] + box[2], box[1] + box[3]),(255,0,0),1,8,0)
 
-            cv.ShowImage("Postprocessed", r)
+            #cv.ShowImage("Postprocessed", r)
 
-            cv.ShowImage("Test", threshold_g)
+            #cv.ShowImage("Test", threshold_g)
         self.destroy()
 
     def destroy(self):
