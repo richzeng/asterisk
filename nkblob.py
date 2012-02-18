@@ -68,6 +68,7 @@ class BlobTracker:
             cv.Threshold(s, threshold_s, 125, 255, cv.CV_THRESH_BINARY)
             cv.And(threshold_h, threshold_s, threshold_total)
             cv.ShowImage("Image", img)
+            connectedcomps(threshold_total) # FLOOD FILL
             cv.ShowImage("Filtered", threshold_total)
         self.destroy()
 
@@ -150,4 +151,4 @@ class BlobTracker:
 
 if __name__=="__main__":
     color_tracker = BlobTracker()
-    color_tracker.run2a()
+    color_tracker.run2()
