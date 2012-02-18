@@ -3,11 +3,11 @@ from cv2 import cv
 
 class BlobTracker:
     def __init__(self):
-        cv.NamedWindow("Hue",1)
-        cv.NamedWindow("Saturation",1)
-        cv.NamedWindow("Filtered",1)
-        cv.NamedWindow("Eroded",1)
         cv.NamedWindow("Image",1)
+        cv.NamedWindow("Filtered",1)
+        cv.NamedWindow("Threshold",1)
+        cv.NamedWindow("Postprocessed",1)
+        cv.NamedWindow("Test",1)
         self.capture = cv.CaptureFromCAM(0)
 
     def run(self):
@@ -34,73 +34,77 @@ class BlobTracker:
         while cv.WaitKey(10) != 27:
             img = cv.QueryFrame(self.capture)
             cv.Flip(img,img,1)
+            cv.ShowImage("Image", img)
+
             r = cv.CreateImage(cv.GetSize(img), 8, 1)
             g = cv.CreateImage(cv.GetSize(img), 8, 1)
             b = cv.CreateImage(cv.GetSize(img), 8, 1)
-            cv.Split(img, b, g, r, None)
+            cv.Split(img, r, g, b, None)
+
+            cv.Smooth(g, g, cv.CV_BLUR, 4)
+            threshold_g = cv.CreateImage(cv.GetSize(img), 8, 1)
+            cv.InRangeS(g, 95, 150, threshold_g)
 
             cv.CvtColor(img, img, cv.CV_BGR2HSV)
             h = cv.CreateImage(cv.GetSize(img), 8, 1)
             s = cv.CreateImage(cv.GetSize(img), 8, 1)
             v = cv.CreateImage(cv.GetSize(img), 8, 1)
             cv.Split(img, h, s, v, None)
+            cv.Erode(h, h, None, 1)
             threshold_h = cv.CreateImage(cv.GetSize(img), 8, 1)
             threshold_s = cv.CreateImage(cv.GetSize(img), 8, 1)
-            threshold_total = cv.CreateImage(cv.GetSize(img), 8, 1)
-            cv.Threshold(h, threshold_h, 65, 255, cv.CV_THRESH_BINARY)
-            cv.Threshold(s, threshold_s, 125, 255, cv.CV_THRESH_BINARY)
-            cv.And(threshold_h, threshold_s, threshold_total)
-            #cv.Merge(threshold_h, s, v, None, img)
-            #cv.CvtColor(img, img, cv.CV_HSV2BGR)
-            #cv.ShowImage(window_hue, threshold_h)
 
-            cv.ShowImage("Hue", threshold_h)
-            cv.ShowImage("Saturation", threshold_s)
+
+            threshold_total = cv.CreateImage(cv.GetSize(img), 8, 1)
+            cv.InRangeS(h, 65, 90, threshold_h)
+            cv.InRangeS(s, 35, 255, threshold_s)
+            cv.And(threshold_h, threshold_s, threshold_total)
+            cv.And(threshold_total, threshold_g, threshold_total)
             cv.ShowImage("Filtered", threshold_total)
 
-            do_blur = True
-            if do_blur:
-                cv.Smooth(threshold_total, threshold_total, cv.CV_BLUR, 10)
-                cv.Erode(threshold_total, threshold_total, None, 3)
-                #cv.Dilate(threshold_total, threshold_total, None, 4)
-                #cv.Smooth(threshold_total, threshold_total, cv.CV_BLUR, 5)
+            cv.Smooth(threshold_total, threshold_total, cv.CV_BLUR, 11)
+            cv.Threshold(threshold_total, threshold_total, 100, 255, cv.CV_THRESH_BINARY)
+            cv.ShowImage("Threshold", threshold_total)
 
-                blurred = cv.CreateImage(cv.GetSize(img), 8, 1)
-                cv.Smooth(threshold_total, blurred, cv.CV_BLUR, 2)
-                cv.AddWeighted(threshold_total, 1.8, blurred, -0.8, 0, threshold_total)
-                cv.Dilate(threshold_total, threshold_total, None, 1)
-                #cv.Erode(threshold_total, threshold_total, None, 6)
 
-            do_edges = False
+            r = cv.GetSubRect(threshold_total, (30, 30, img.width-30, img.height-30))
+            do_edges = True
             if do_edges:
-                mem = cv.CreateMemStorage()
-                contours = cv.FindContours(threshold_total,mem,cv.CV_RETR_LIST)
-                moments = cv.Moments(contours, 0)
-                area = cv.GetCentralMoment(moments, 0, 0)
-                if area > 10:
-                    x = cv.GetSpatialMoment(moments, 1, 0)/area
-                    y = cv.GetSpatialMoment(moments, 0, 1)/area
-                    print('x:{0} y{1} area:{2}'.format(x,y,area))
+                try:
+                    mem = cv.CreateMemStorage()
+                    contours = cv.FindContours(r,mem,cv.CV_RETR_LIST)
+                    if contours:
+                        moments = cv.Moments(contours, 0)
+                        area = cv.GetCentralMoment(moments, 0, 0)
+                        if area > 10:
+                            x = cv.GetSpatialMoment(moments, 1, 0)/area
+                            y = cv.GetSpatialMoment(moments, 0, 1)/area
+                            print('x:{0} y{1} area:{2}'.format(x,y,area))
+                except:
+                    raise
 
-            do_box = True
+            do_box = False
             if do_box:
                 cv.Canny(threshold_total, threshold_total, 25, 75)
                 storage = cv.CreateMemStorage(0)
                 obj = cv.FindContours(threshold_total, storage, cv.CV_RETR_CCOMP, cv.CV_CHAIN_APPROX_SIMPLE)
+                aa = cv.ApproxPoly(obj, storage, cv.CV_POLY_APPROX_DP)
+                print [a for a in aa]
                 box = cv.BoundingRect(obj)
-                print((box[0]+(box[2]/2), box[1]+(box[3]/2)))
+                #print((box[0]+(box[2]/2), box[1]+(box[3]/2)))
                 cv.Rectangle(img, (box[0], box[1]), (box[0] + box[2], box[1] + box[3]),(255,0,0),1,8,0)
 
-            cv.ShowImage("Eroded", threshold_total)
-            cv.ShowImage("Image", img)
+            cv.ShowImage("Postprocessed", r)
+
+            cv.ShowImage("Test", threshold_s)
         self.destroy()
 
     def destroy(self):
-        cv.DestroyWindow("Hue")
-        cv.DestroyWindow("Saturation")
-        cv.DestroyWindow("Filtered")
-        cv.DestroyWindow("Eroded")
         cv.DestroyWindow("Image")
+        cv.DestroyWindow("Filtered")
+        cv.DestroyWindow("Threshold")
+        cv.DestroyWindow("Postprocessed")
+        cv.DestroyWindow("Test")
         del self.capture
 
 if __name__=="__main__":
