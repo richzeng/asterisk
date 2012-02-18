@@ -1,5 +1,6 @@
-from cv2 import cv
 import gesture
+if __name__ == '__main__':
+    from cv2 import cv
 
 camcapture = cv.CreateCameraCapture(0)
 
