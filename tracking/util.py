@@ -155,3 +155,9 @@ def consume_from_file(consumer, filename):
     """
     run_async_consumer(file_producer(filename), consumer)
 
+def visualize_file(filename):
+    """Visualize the finger points saved in a file
+
+    :param string filename: Filename storing saved gestures
+    """
+    consume_from_file(visualize_consumer, filename)
