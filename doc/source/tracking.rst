@@ -1,5 +1,5 @@
 Tracking API
-=================
+============
 
 .. automodule:: tracking
    :members:
@@ -8,4 +8,7 @@ Tracking API
    :members:
 
 .. automodule:: tracking.tracker_out
+   :members:
+
+.. automodule:: tracking.util
    :members:

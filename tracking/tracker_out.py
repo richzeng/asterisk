@@ -8,7 +8,6 @@ class TrackerOut(list):
     def __init__(self, q):
         """Initializes a TrackerOut object
 
-        Arguments:
         :param multiprocessing.Queue q: A FIFO queue to communicate data across
         """
         super(list, self).__init__()
@@ -28,7 +27,7 @@ class TrackerOut(list):
     def clear(self):
         """Clears the list of positions
         """
-        del self[0:len(self)-1]
+        del self[0:len(self)]
 
     def time_slice(self, start_time, end_time = None):
         """Returns a list of the finger positions between a given starting time and ending time
