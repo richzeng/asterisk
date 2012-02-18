@@ -3,3 +3,5 @@ Project Asterisk: intuitive gesture recognition
 
 To run Asterisk: python asterisk.py run
 For more options: python asterisk.py
+
+To build documentation, run "make html" inside doc/
