@@ -69,16 +69,29 @@ def resize(gesture, points, min_size):
 THRESHOLD = 0.01
 
 def match(gestures, points):
-    """Finds matches to gestures in points
+    """Finds matches to gestures in points. Algorithm -
+    1. For every subset of points from points[:] to points[-2:]
+    2. for every gesture
+    3. If the points are smaller that the min_size for that gesture, skip it
+    4. If the points are in the wrong direction, skip them.
+    5. Resize and shift the image to fit the gesture.
+    6. Check the error from the gesture to the points.
+    7. If this error is under the threshold, return this gesture's index
 
     :param list gestures: a list of gesturesto compare to the points
     :param list points: The list of positions of the hand
     """
-    for n in range(len(points) - 1):
+    for n in range(len(points) - 2):
         t_points = points[n:]
         for index in range(len(gestures)):
             min_size, gesture = gestures[index]
             ratio, x_shift, y_shift = resize(gesture, t_points, min_size)
+            sgn_g_x = cmp(gesture[-1][0] - gesture[0][0], 0)
+            sgn_g_y = cmp(gesture[-1][1] - gesture[0][1], 0)
+            sgn_p_x = cmp(points[-1][0] - points[0][0], 0)
+            sgn_p_y = cmp(points[-1][1] - points[0][1], 0)
+            if sgn_g_x != 0 and sgn_p_x != 0 and sgn_g_x != sgn_p_x: continue
+            if sgn_g_y != 0 and sgn_p_y != 0 and sgn_g_y != sgn_p_y: continue
             if ratio == None: continue
             if ratio <= 0: continue
             r_points = [(ratio*i[0], ratio*i[1]) for i in t_points]
