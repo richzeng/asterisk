@@ -8,10 +8,10 @@ class Gesture():
         else:
             def print_name():
                 print name
-            command = print_name
+            self.command = print_name
         self.delay = delay
     def execute(self):
-        command()
+        self.command()
 
 def sqr_min_dist(point, line):
     """Returns the square of the minimum of the distance from point, 'point,'
@@ -127,7 +127,6 @@ def match(gestures, points):
     if min_err == None or min_err > THRESHOLD:
         return None
     index = gesture_errors.index(min_err)
-    print "Error for gesture", index, "=", min_err
     return index
 
 sample_points = ((223, 189), (223, 187), (223, 184), (223, 182), (223, 179), (222, 176), (222, 173), (221, 170), (221, 167), (220, 164), (220, 161), (219, 158), (218, 155), (217, 151), (217, 148), (216, 145), (216, 142), (215, 138), (215, 135), (216, 132), (216, 129), (215, 125), (215, 122), (216, 120), (216, 117), (217, 113), (217, 110), (217, 107), (216, 103), (216, 99), (214, 95), (213, 92), (212, 89), (211, 87), (210, 87), (210, 89))

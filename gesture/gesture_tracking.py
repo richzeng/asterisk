@@ -129,6 +129,10 @@ def tracking_producer(ti):
     del camcapture
 
 def tracking_consumer(to):
+    # A few things I would like this to do.
+    # 1. Clear the queue of past position when a gesture is detected
+    # 2. Wait delay gesture.delay until running gesture.execute()
+    # I'm not entirely sure how to do either of these.
     most_recent = 0
     while True:
         to.flush()
@@ -139,7 +143,7 @@ def tracking_consumer(to):
                 most_recent = to[-1][1]
                 g = gesture.match(gesture.gestures, map(lambda x: x[0][0], to.time_slice(to[-1][1]-1)))
                 if g != None:
-                    print "Gesture detected! Gesture index =", g
+                    gesture.gestures[g].execute()
 
 
 if __name__ == '__main__':
