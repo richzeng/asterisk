@@ -158,7 +158,7 @@ def match(gestures, points):
     index = gesture_errors.index(min_err)
     return gestures[index]
 
-def make_default_gesture(name, count, end, default_size, command=None):
+def make_default_gesture(name, count, end, default_size, command=None, delay=0):
     return Gesture(name, [[(0, 0), end] for i in range(count)], [default_size for i in range(count)], command)
 
 def gesture_consumer(to):
@@ -193,8 +193,8 @@ one_up = Gesture("One Up", [[(0, 0), (0, -1)]], [(0, 50)])
 #two_down = make_default_gesture("Two Down", 2, (0, 1), (0, 50), mouse.move_down)
 two_left = make_default_gesture("Two Left", 2, (-1, 0), (50, 0), terminal.move_left)
 two_right = make_default_gesture("Two Right", 2, (1, 0), (50, 0), terminal.move_right)
-two_up = make_default_gesture("Two Up", 2, (0, -1), (0, 50), terminal.move_up)
-two_down = make_default_gesture("Two Down", 2, (0, 1), (0, 50), terminal.move_down)
+two_up = make_default_gesture("Two Up", 2, (0, -1), (0, 50), terminal.move_up, delay=0.25)
+two_down = make_default_gesture("Two Down", 2, (0, 1), (0, 50), terminal.move_down, delay=0.25)
 two_together = Gesture("Two Together", [[(0, 0), (1, 0)], [(0, 0), (-1, 0)]], [(50, 0), (50, 0)])
 two_away = Gesture("Two Away", [[(0, 0), (-1, 0)], [(0, 0), (1, 0)]], [(50, 0), (50, 0)])
 gestures = [one_up, two_left, two_right, two_up, two_down, two_together, two_away]
