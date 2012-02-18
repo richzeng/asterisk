@@ -6,7 +6,7 @@ import sys, os
 sys.path.insert(0, os.path.abspath('..'))
 import tracking
 
-MAX_POINTS = 50
+MAX_POINTS = 100
 
 def get_rect(img, rect):
     """Returns a rectangle based on the original, but within the bounds of
@@ -137,7 +137,7 @@ def tracking_consumer(to):
         if len(to) > 2:
             if most_recent != to[-1][1]:
                 most_recent = to[-1][1]
-                g = gesture.match(gesture.gestures, map(lambda x: x[0][0], to))
+                g = gesture.match(gesture.gestures, map(lambda x: x[0][0], to.time_slice(to[-1][1]-1)))
                 if g != None:
                     print "Gesture detected! Gesture index =", g
 
