@@ -128,15 +128,18 @@ def tracking_producer(ti):
     del camcapture
 
 def tracking_consumer(to):
+    most_recent = 0
     while True:
         to.flush()
         if len(to) > MAX_POINTS:
             del to[:-MAX_POINTS]
         if len(to) == MAX_POINTS:
-            g = gesture.match(gesture.gestures, map(lambda x: x[0][0], to))
-            if g != None:
-                print "Gesture detected! Gesture index =", g
+            if most_recent != to[-1][1]:
+                most_recent = to[-1][1]
+                g = gesture.match(gesture.gestures, map(lambda x: x[0][0], to))
+                if g != None:
+                    print "Gesture detected! Gesture index =", g
 
 
 if __name__ == '__main__':
-    tracking.util.run_async(tracking_producer, tracking_consumer)
+    tracking.util.run_async_producer(tracking_producer, tracking_consumer)
