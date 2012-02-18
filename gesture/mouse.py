@@ -11,15 +11,19 @@ try:
         m.move(x,y)
 
     def move_left():
+        print "Move left"
         move_rel(-MOVE_DISTANCE, 0)
 
     def move_right():
+        print "Move right"
         move_rel(MOVE_DISTANCE, 0)
 
     def move_up():
+        print "Move up"
         move_rel(0, -MOVE_DISTANCE)
 
     def move_down():
+        print "Move down"
         move_rel(0, MOVE_DISTANCE)
 
 except:
