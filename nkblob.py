@@ -43,7 +43,7 @@ class BlobTracker:
 
             cv.Smooth(g, g, cv.CV_BLUR, 4)
             threshold_g = cv.CreateImage(cv.GetSize(img), 8, 1)
-            cv.InRangeS(g, 95, 150, threshold_g)
+            cv.InRangeS(g, 75, 150, threshold_g)
 
             cv.CvtColor(img, img, cv.CV_BGR2HSV)
             h = cv.CreateImage(cv.GetSize(img), 8, 1)
@@ -56,7 +56,7 @@ class BlobTracker:
 
 
             threshold_total = cv.CreateImage(cv.GetSize(img), 8, 1)
-            cv.InRangeS(h, 65, 90, threshold_h)
+            cv.InRangeS(h, 55, 95, threshold_h)
             cv.InRangeS(s, 35, 255, threshold_s)
             cv.And(threshold_h, threshold_s, threshold_total)
             cv.And(threshold_total, threshold_g, threshold_total)
@@ -96,7 +96,7 @@ class BlobTracker:
 
             cv.ShowImage("Postprocessed", r)
 
-            cv.ShowImage("Test", threshold_s)
+            cv.ShowImage("Test", threshold_g)
         self.destroy()
 
     def destroy(self):
