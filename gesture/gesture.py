@@ -89,6 +89,43 @@ def resize(gesture, points, min_size):
 
 THRESHOLD = 0.05
 
+def compare(gesture, points):
+    finger_count = len(points[0])
+    if gesture.finger_num != finger_count:
+        return None
+    gesture_err = None
+    for n in xrange(finger_count):
+        waypoints = gesture.waypoints[n]
+        min_size = gesture.min_sizes[n]
+        sgn_g_x = cmp(waypoints[-1][0] - waypoints[0][0], 0)
+        sgn_g_y = cmp(waypoints[-1][1] - waypoints[0][1], 0)
+        min_err = None
+        for s in range(len(points) - 2):
+            t_points = [p[n] for p in points[s:]]
+            ratio, x_shift, y_shift = resize(waypoints, t_points, min_size)
+                
+            sgn_p_x = cmp(t_points[-1][0] - t_points[0][0], 0)
+            sgn_p_y = -cmp(t_points[-1][1] - t_points[0][1], 0)
+            if sgn_g_x != 0 and sgn_p_x != 0 and sgn_g_x != sgn_p_x: continue
+            if sgn_g_y != 0 and sgn_p_y != 0 and sgn_g_y != sgn_p_y: continue
+                
+            if ratio == None: continue
+            if ratio <= 0: continue
+            r_points = [(ratio*i[0], ratio*i[1]) for i in t_points]
+            r_points = [(i[0] - x_shift, i[1] - y_shift) for i in r_points]
+            #if index == 5: print(r_points)
+            err = error(waypoints, r_points)
+            if min_err == None:
+                min_err = err
+            else:
+                min_err = min(err, min_err)
+        if gesture_err == None: gesture_err = min_err
+        elif min_err != None: gesture_err += min_err
+    if gesture_err != None:
+        return gesture_err * 1.0 / finger_count
+    else:
+        return None
+
 def match(gestures, points):
     """Finds matches to gestures in points. Algorithm -
     1. For every subset of points from points[:] to points[-2:]
@@ -102,50 +139,15 @@ def match(gestures, points):
     :param list gestures: a list of gesturesto compare to the points
     :param list points: The list of positions of the hand
     """
-    finger_count = len(points[0])
-    gesture_errors = []
-    for index in range(len(gestures)):
-        gesture = gestures[index]
-        if gesture.finger_num != finger_count:
-            continue
-        gesture_err = None
-        for n in xrange(finger_count):
-            waypoints = gesture.waypoints[n]
-            min_size = gesture.min_sizes[n]
-            sgn_g_x = cmp(waypoints[-1][0] - waypoints[0][0], 0)
-            sgn_g_y = cmp(waypoints[-1][1] - waypoints[0][1], 0)
-            min_err = None
-            for s in range(len(points) - 2):
-                t_points = [p[n] for p in points[s:]]
-                ratio, x_shift, y_shift = resize(waypoints, t_points, min_size)
-                
-                sgn_p_x = cmp(t_points[-1][0] - t_points[0][0], 0)
-                sgn_p_y = -cmp(t_points[-1][1] - t_points[0][1], 0)
-                if sgn_g_x != 0 and sgn_p_x != 0 and sgn_g_x != sgn_p_x: continue
-                if sgn_g_y != 0 and sgn_p_y != 0 and sgn_g_y != sgn_p_y: continue
-                
-                if ratio == None: continue
-                if ratio <= 0: continue
-                r_points = [(ratio*i[0], ratio*i[1]) for i in t_points]
-                r_points = [(i[0] - x_shift, i[1] - y_shift) for i in r_points]
-                err = error(waypoints, r_points)
-                if min_err == None:
-                    min_err = err
-                else:
-                    min_err = min(err, min_err)
-            if gesture_err == None: gesture_err = min_err
-            elif min_err != None: gesture_err += min_err
-        if gesture_err != None:
-            gesture_errors.append(gesture_err * 1.0 / finger_count)
-        else:
-            gesture_err.append(None)
+    gesture_errors = [compare(gesture, points) for gesture in gestures]
+    print(gesture_errors)
     if len(gesture_errors) == 0 or all(e == None for e in gesture_errors):
         return None
     min_err = min(e for e in gesture_errors if e != None)
     if min_err == None or min_err > THRESHOLD:
         return None
     index = gesture_errors.index(min_err)
-    return index
+    return gestures[index]
 
 def make_default_gesture(name, count, end, default_size):
     return Gesture(name, [[(0, 0), end] for i in range(count)], [default_size for i in range(count)])
