@@ -98,7 +98,7 @@ class FingerTracker(object):
         for comp in complist:
             area = comp[0]
             x, y, width, height = comp[-1]
-            if float(abs(width-height))/min(width,height) > 0.25:
+            if float(abs(width-height))/min(width,height) > 0.45:
                 continue
 
             x1, x2, y1, y2 = x, x + width, y, y + height

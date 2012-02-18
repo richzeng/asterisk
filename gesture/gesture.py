@@ -138,7 +138,7 @@ def match(gestures, points):
         if gesture_err != None:
             gesture_errors.append(gesture_err * 1.0 / finger_count)
         else:
-            gesture_err.append(None)
+            gesture_errors.append(None)
     if len(gesture_errors) == 0 or all(e == None for e in gesture_errors):
         return None
     min_err = min(e for e in gesture_errors if e != None)
