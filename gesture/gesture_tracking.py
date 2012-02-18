@@ -63,7 +63,8 @@ def mousecallback(event, x, y, flags, param):
     :param thing flags: no idea what this is.
     :param thing param: no idea what this is.
     """
-    global gray, is_tracking, object_x0, object_y0, tpl
+    global gray, is_tracking, object_x0, object_y0, tpl, past_points
+    past_points = []
     if event == cv.CV_EVENT_LBUTTONUP:
         rect = get_rect(gray, (x - TPL_WIDTH // 2, y - TPL_HEIGHT // 2,
                                WINDOW_WIDTH, WINDOW_HEIGHT))
