@@ -1,6 +1,10 @@
 Project Asterisk: intuitive gesture recognition
 ===============================================
 
+Note: Asterisk requires Numpy and OpenCV 2.3
+http://sourceforge.net/projects/opencvlibrary/files/opencv-unix/2.3.1/
+
+
 To run Asterisk: python asterisk.py run
 For more options: python asterisk.py
 
